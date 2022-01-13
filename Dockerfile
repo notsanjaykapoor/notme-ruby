@@ -38,6 +38,6 @@ COPY . /usr/app/src
 CMD bash
 
 #
-# example command to run image/container with entrypoint
-# docker run --rm -it --entrypoint bash <image or container name>
+# example command to run image/container with entrypoint:
+#   - docker run --rm -it --entrypoint bash <image or container name>
 #

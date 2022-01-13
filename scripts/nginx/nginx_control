@@ -7,7 +7,7 @@ Signal.trap("QUIT")do
   stdout.puts "[#{pid}] nginx_control: trapped quit signal ..."
 end
 
-cmd = "nginx -c /usr/app/src/config/nginx/nginx.conf"
+cmd = "nginx -c /usr/app/src/nginx/nginx.conf"
 
 stdout.puts "[#{pid}] nginx_control: starting nginx ..."
 
