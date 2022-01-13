@@ -8,7 +8,7 @@ require "toml-rb"
 
 Console.logger.info("Boot", "starting")
 
-::Sequel.extension(:fiber_concurrency)
+::Sequel.extension(:fiber_concurrency, :pg_array_ops, :pg_json_ops)
 
 require "./boot/database.rb"
 require "./boot/json.rb"
@@ -23,6 +23,7 @@ Boot::Json.new.call
 # initialize global object
 
 DB = struct_boot_database.connection
+DB.extension(:pg_array, :pg_json)
 
 # load app files
 

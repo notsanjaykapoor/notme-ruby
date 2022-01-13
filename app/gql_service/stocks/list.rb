@@ -7,12 +7,14 @@ module GqlService
       def initialize(query:)
         @query = query
 
-        @topic = self.class.name.underscore
-
         @fields = {
           "stock" => {
-            "name" => "name",
+            "category" => "category",
+            "industry" => "industry",
             "price" => "price",
+            "price_gte" => "price_gte",
+            "price_lte" => "price_lte",
+            "ticker" => "ticker",
           }
         }
 
@@ -36,12 +38,13 @@ module GqlService
             tokens: tokens,
           )
 
-          sequel_query = sequel_query.order(Sequel.asc(:name))
+          sequel_query = sequel_query.order(Sequel.asc(:ticker))
 
-          struct.stocks = sequel_query.select(:name, :price).map do |object|
+          struct.stocks = sequel_query.select(:price, :tags, :ticker).map do |object|
             {
-              name: object[:name],
-              price: object[:price],
+              price: object.price,
+              tags: object.tags,
+              ticker: object.ticker,
             }
           end
         rescue => e
@@ -71,20 +74,32 @@ module GqlService
             raise "invalid field:#{field}"
           end
 
-          if [klass, field_] == ["stock", "name"]
+          if [klass, field_] == ["stock", "category"]
             if value[/^~/]
-              value = value.gsub(/~/, '')
-              query = query.name_like(value)
+              # todo
             else
-              query = query.name_eq(value)
+              value = value.downcase
+              query = query.tagged_with_any("category:#{value}")
+            end
+          elsif [klass, field_] == ["stock", "industry"]
+            if value[/^~/]
+              # todo
+            else
+              value = value.downcase
+              query = query.tagged_with_any("industry:#{value}")
             end
           elsif [klass, field_] == ["stock", "price"]
-            if value[/^>/]
-              value = value.gsub(/>/, '')
-              query = query.price_gte(value)
-            elsif value[/^</]
-              value = value.gsub(/</, '')
-              query = query.price_lte(value)
+            query = query.where(price: value)
+          elsif [klass, field_] == ["stock", "price_gte"]
+            query = query.price_gte(value)
+          elsif [klass, field_] == ["stock", "price_lte"]
+            query = query.price_lte(value)
+          elsif [klass, field_] == ["stock", "ticker"]
+            if value[/^~/]
+              value = value.gsub(/~/, '')
+              query = query.ticker_like(value)
+            else
+              query = query.ticker_eq(value)
             end
           end
         end

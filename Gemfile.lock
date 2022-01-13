@@ -49,6 +49,7 @@ GEM
     localhost (1.1.9)
     mapping (1.1.1)
     oj (3.13.11)
+    pg (1.2.3)
     process-metrics (0.2.1)
       console (~> 1.8)
       samovar (~> 2.1)
@@ -86,6 +87,7 @@ DEPENDENCIES
   falcon
   graphql
   oj
+  pg
   rack-cors
   roda
   sequel

@@ -7,8 +7,8 @@ class Stock < ::Sequel::Model
 
   def validate
     super
-    validates_presence [:name, :price]
-    validates_unique [:name]
+    validates_presence [:ticker, :price]
+    validates_unique [:ticker]
   end
 
   # scopes
@@ -19,7 +19,7 @@ class Stock < ::Sequel::Model
     end
 
     def name_like(s)
-      where(Sequel.lit("name like ?", "%#{s.to_s.downcase}%"))
+      where(Sequel.lit("name ilike ?", "%#{s}%"))
     end
 
     def price_gte(s)
@@ -29,6 +29,32 @@ class Stock < ::Sequel::Model
     def price_lte(s)
       where(Sequel.lit("price <= ?", s.to_f))
     end
+
+    # tagged with all tags in list
+    def tagged_with_all(list)
+      where(Sequel.pg_array(:tags).contains(Array(list)))
+    end
+
+    # tagged with any tag in list
+    def tagged_with_any(list)
+      where(Sequel.pg_array(:tags).overlaps(Array(list)))
+    end
+
+    def ticker_eq(s)
+      where(ticker: s)
+    end
+
+    def ticker_like(s)
+      where(Sequel.lit("ticker like ?", "%#{s.to_s.upcase}%"))
+    end
+  end
+
+  def tags
+    super || []
+  end
+
+  def tags=(list)
+    super(TagList.new.normalize(tags: list))
   end
 
 end

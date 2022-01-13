@@ -4,11 +4,11 @@ pid = Process.pid
 stdout = STDOUT
 
 Signal.trap("QUIT")do
-  stdout.puts "[#{pid}] nginx_control: trapped quit signal ..."
+  stdout.puts "[#{pid}] nginx_supervisor: trapped quit signal ..."
 end
 
 cmd = "nginx -c /usr/app/src/nginx/nginx.conf"
 
-stdout.puts "[#{pid}] nginx_control: starting nginx ..."
+stdout.puts "[#{pid}] nginx_supervisor: starting nginx ..."
 
 Kernel.system(cmd)

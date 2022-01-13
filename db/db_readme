@@ -1,0 +1,10 @@
+#! /bin/sh
+
+echo "Run all migrations:"
+echo "  - sequel -m db/migrations postgresql://postgres:@127.0.0.1:5432/ruby_async_dev"
+echo "  - sequel -m db/migrations postgresql://postgres:postgres@postgres:5432/ruby_async_prd"
+
+echo "Create database:"
+echo "  - sequel"
+echo "  => DB = Sequel.connect(\"postgresql://postgres:@127.0.0.1:5432\")"
+echo "  => DB.execute(\"create database ruby_async_dev\")"

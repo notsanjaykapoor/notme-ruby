@@ -7,6 +7,7 @@ gem "async"
 gem "falcon"
 gem "graphql", require: false
 gem "oj", require: false
+gem "pg", require: false
 gem "rack-cors", require: false
 gem "roda"
 gem "sequel"
