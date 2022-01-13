@@ -48,6 +48,13 @@ class App < Roda
       ::Api::Ping.new(request: request, response: response).call
     end
 
+    # GET /startup
+    r.get "startup" do
+      env[:api_name] = "startup"
+
+      ::Api::Startup.new(request: request, response: response).call
+    end
+
     r.on "stocks" do
       # GET|PUT /stocks/{name}?price=x.y
       r.on String do |name|

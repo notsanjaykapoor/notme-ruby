@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Api
-  class Ping
+  class Startup
 
     def initialize(request:, response:)
       @request = request
@@ -14,13 +14,11 @@ module Api
 
     def call
       code = @params.fetch("code", 0)
-      message = @params.fetch("message", "pong")
 
       Console.logger.info(self)
 
       {
         code: code,
-        message: message,
       }
     end
 

@@ -1,5 +1,5 @@
 upstream upstream_server {
-  server unix:/usr/app/src/application.ipc fail_timeout=0;
+  server 127.0.0.1:3001 fail_timeout=5s;
 }
 
 server {
