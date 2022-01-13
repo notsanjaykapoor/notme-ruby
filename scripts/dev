@@ -1,0 +1,3 @@
+#!/usr/bin/env ruby
+
+system("bundle exec falcon --bind http://localhost:9292 --count 2")

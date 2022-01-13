@@ -1,0 +1,110 @@
+# Stage 1 - the build process with minimal ubuntu
+FROM ubuntu:20.04 as app
+
+# Install packages
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -qq -yq --no-install-recommends \
+  apache2-utils \
+  autoconf \
+  bison \
+  build-essential \
+  curl \
+  file \
+  git \
+  libgs-dev \
+  libpq-dev \
+  libreadline-dev \
+  libssl-dev \
+  nginx \
+  nodejs \
+  postgresql-client-12 \
+  postgresql-client-common \
+  tmux \
+  zlib1g-dev \
+  && apt-get autoremove -y \
+  && apt-get clean all \
+  && rm -rf /var/cache/apt /var/lib/apt/lists/* \
+  && mkdir -p /usr/app/src \
+  && mkdir -p /usr/local/bundle
+
+# Set environment variables
+
+ENV HOME /root
+ENV RACK_ENV production
+ENV RAILS_ENV production
+
+# install rbenv
+
+RUN curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash
+
+RUN echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
+RUN echo 'eval "$(rbenv init -)"' >> ~/.bashrc
+
+# install ruby
+
+RUN /root/.rbenv/bin/rbenv install 3.1.0
+RUN /root/.rbenv/bin/rbenv global 3.1.0
+
+# these env vars are required to install gems to a shared directory
+ENV GEM_HOME /usr/local/bundle
+ENV BUNDLE_PATH /usr/local/bundle
+
+# path recommendation: https://github.com/bundler/bundler/pull/6469#issuecomment-383235438
+ENV PATH /usr/local/bundle/bin:/usr/local/bundle/gems/bin:$PATH
+
+# Add Gemfile and install gems using bundler
+
+WORKDIR /usr/app/src
+
+COPY Gemfile /usr/app/src/
+COPY Gemfile.lock /usr/app/src/
+
+RUN gem install bundler --version 2.3.3 \
+  && bundle config set without development test \
+  && bundle install
+
+# Add app
+
+COPY . /usr/app/src
+
+# Stage 2 - production environment
+FROM ubuntu:20.04
+
+RUN apt-get update && apt-get install -qq -yq --no-install-recommends \
+  busybox \
+  curl \
+  file \
+  gnupg \
+  libgs-dev \
+  nginx \
+  nodejs \
+  postgresql-client-12 \
+  ruby2.7 \
+  supervisor \
+  tmux \
+  && mkdir -p /var/log/supervisor \
+  && mkdir -p /usr/app/src/log \
+  && mkdir -p /usr/app/src/tmp \
+  && apt-get autoremove -y \
+  && apt-get clean all \
+  && rm -rf /var/cache/apt /var/lib/apt/lists/*
+
+ENV HOME /root
+ENV RACK_ENV production
+ENV RAILS_ENV production
+
+ENV GEM_HOME /usr/local/bundle
+ENV BUNDLE_PATH /usr/local/bundle
+ENV PATH /usr/local/bundle/bin:/usr/local/bundle/gems/bin:/root/google-cloud-sdk/bin:$PATH
+
+WORKDIR /usr/app/src
+
+COPY --from=app /usr/app/src/ /usr/app/src/
+COPY --from=app /usr/local/bundle/ /usr/local/bundle/
+
+# COPY config/bash/bash_alias /root/.bash_aliases
+# COPY config/irb/dot_irbrc /root/.irbrc
+
+CMD bash

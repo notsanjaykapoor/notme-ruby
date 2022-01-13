@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+
+pid = Process.pid
+stdout = STDOUT
+
+Signal.trap("QUIT")do
+  stdout.puts "[#{pid}] nginx_control: trapped quit signal ..."
+end
+
+cmd = "nginx -c /usr/app/src/config/nginx/nginx.conf"
+
+stdout.puts "[#{pid}] nginx_control: starting nginx ..."
+
+Kernel.system(cmd)

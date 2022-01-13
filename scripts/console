@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+cmd = "irb -r ./boot.rb"
+
+system(cmd)
