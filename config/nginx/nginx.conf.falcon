@@ -1,5 +1,5 @@
 upstream upstream_server {
-  server unix:/usr/app/src/tmp/puma.sock fail_timeout=0;
+  server unix:/usr/app/src/supervisor.ipc fail_timeout=0;
 }
 
 server {
