@@ -1,4 +1,5 @@
 class String
+
   def underscore
     self.gsub(/::/, '/').
       gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
@@ -6,4 +7,5 @@ class String
       tr("-", "_").
       downcase
   end
+
 end

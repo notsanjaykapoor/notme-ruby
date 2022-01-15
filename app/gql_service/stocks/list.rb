@@ -4,8 +4,10 @@ module GqlService
   module Stocks
     class List
 
-      def initialize(query:)
+      def initialize(query:, offset:, limit:)
         @query = query
+        @offset = offset
+        @limit = limit
 
         @fields = {
           "stock" => {
@@ -38,7 +40,7 @@ module GqlService
             tokens: tokens,
           )
 
-          sequel_query = sequel_query.order(Sequel.asc(:ticker))
+          sequel_query = sequel_query.order(Sequel.asc(:ticker)).offset(@offset).limit(@limit)
 
           struct.stocks = sequel_query.select(:price, :tags, :ticker).map do |object|
             {

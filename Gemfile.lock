@@ -21,6 +21,10 @@ GEM
       async
     async-pool (0.3.9)
       async (>= 1.25)
+    async-websocket (0.19.0)
+      async-http (~> 0.54)
+      async-io (~> 1.23)
+      protocol-websocket (~> 0.7.0)
     build-environment (1.13.0)
     citrus (3.0.2)
     console (1.14.0)
@@ -60,6 +64,9 @@ GEM
     protocol-http2 (0.14.2)
       protocol-hpack (~> 1.4)
       protocol-http (~> 0.18)
+    protocol-websocket (0.7.5)
+      protocol-http (~> 0.2)
+      protocol-http1 (~> 0.2)
     rack (2.2.3)
     rack-cors (1.1.1)
       rack (>= 2.0.0)
@@ -71,7 +78,6 @@ GEM
       console (~> 1.0)
       mapping (~> 1.0)
     sequel (5.52.0)
-    sqlite3 (1.4.2)
     timers (4.3.3)
     toml-rb (2.1.0)
       citrus (~> 3.0, > 3.0)
@@ -83,6 +89,7 @@ PLATFORMS
 
 DEPENDENCIES
   async
+  async-websocket
   debug
   falcon
   graphql
@@ -91,7 +98,6 @@ DEPENDENCIES
   rack-cors
   roda
   sequel
-  sqlite3
   toml-rb
   ulid
 

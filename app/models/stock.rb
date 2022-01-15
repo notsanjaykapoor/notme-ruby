@@ -41,7 +41,7 @@ class Stock < ::Sequel::Model
     end
 
     def ticker_eq(s)
-      where(ticker: s)
+      where(ticker: s.to_s.upcase)
     end
 
     def ticker_like(s)

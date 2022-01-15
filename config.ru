@@ -1,4 +1,4 @@
-# load boot file(s)
+# boot app
 
 require "./boot.rb"
 
@@ -13,12 +13,24 @@ end
 
 class App < Roda
   plugin :all_verbs
+  plugin :hooks
   plugin :json, serializer: ::Oj.method(:dump)
   plugin :json_parser, parser: ::Oj.method(:load)
+  plugin :request_headers
+
+  before do
+    env[:start] = ::Async::Clock.now
+
+    Console.logger.info("Rack", "#{request.request_method.downcase} #{request.path}")
+  end
+
+  after do |rack_code, rack_object|
+    time_ms = ((::Async::Clock.now - env[:start])*1000).round(3)
+
+    Console.logger.info("Rack", "#{request.request_method.downcase} #{request.path} #{rack_code} #{time_ms}ms")
+  end
 
   route do |r|
-    Console.logger.info("Rack", "#{request.request_method.downcase} #{request.path}")
-
     r.post "graphql" do
       env[:api_name] = "gql"
 
@@ -41,57 +53,40 @@ class App < Roda
       r.redirect "/ping"
     end
 
-    # GET /ping
-    r.get "ping" do
+    r.get "ping" do # GET /ping
       env[:api_name] = "ping"
 
       ::Api::Ping.new(request: request, response: response).call
     end
 
-    # GET /startup
-    r.get "startup" do
+    r.get "startup" do # GET /startup
       env[:api_name] = "startup"
 
       ::Api::Startup.new(request: request, response: response).call
     end
 
-    r.on "stocks" do
-      # GET|PUT /stocks/{name}?price=x.y
-      r.on String do |name|
-        env[:api_name] = "stock_update"
+    r.on "api/v1" do
+      r.on "q" do
+        r.on "add" do # POST|PUT /api/v1/q/add
+          env[:api_name] = "q_add"
 
-        ::Api::Stocks::Update.new(
-          request: request,
-          response: response,
-          name: name
-        ).call
-      end
-    end
-
-    # /hello branch
-    r.on "hello" do
-      # Set variable for all routes in /hello branch
-      @greeting = 'Hello'
-
-      # GET /hello/world request
-      r.get "world" do
-        "#{@greeting} world!"
-      end
-
-      # /hello request
-      r.is do
-        # GET /hello request
-        r.get do
-          "#{@greeting}!"
+          ::Api::V1::Queue::Add.new(request: request, response: response).call
         end
+      end
 
-        # POST /hello request
-        r.post do
-          puts "Someone said #{@greeting}!"
-          r.redirect
+      r.on "stocks" do
+        r.on String do |ticker| # POST|PUT /api/v1/stocks/{ticker}?price=50.01
+          env[:api_name] = "stock_add"
+
+          ::Api::V1::Stocks::Update.new(
+            request: request,
+            response: response,
+            ticker: ticker
+          ).call
         end
       end
     end
+
   end
 end
 

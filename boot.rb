@@ -20,10 +20,12 @@ struct_boot_database = Boot::Database.new.call
 
 Boot::Json.new.call
 
-# initialize global object
+# initialize db global object
 
 DB = struct_boot_database.connection
 DB.extension(:pg_array, :pg_json)
+
+Console.logger.info("Boot", "database connection initialized")
 
 # load app files
 
@@ -50,5 +52,7 @@ end
 Dir["./app/gql/*.rb"].sort.each do |file|
   require file
 end
+
+Console.logger.info("Boot", "app files loaded")
 
 Console.logger.info("Boot", "completed")
