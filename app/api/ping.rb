@@ -3,6 +3,8 @@
 module Api
   class Ping
 
+    attr_reader :object_id
+
     def initialize(request:, response:)
       @request = request
       @response = response
@@ -15,8 +17,6 @@ module Api
     def call
       code = @params.fetch("code", 0)
       message = @params.fetch("message", "pong")
-
-      Console.logger.info(self)
 
       {
         code: code,

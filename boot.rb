@@ -5,6 +5,7 @@ require "process/metrics"
 require "roda"
 require "sequel"
 require "toml-rb"
+require "ulid"
 
 Console.logger.info("Boot", "starting")
 
