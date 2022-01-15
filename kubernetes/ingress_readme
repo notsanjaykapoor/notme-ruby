@@ -1,0 +1,13 @@
+#!/bin/sh
+
+echo "Install ingress-nginx using these docs:"
+echo "  - https://kubernetes.github.io/ingress-nginx/deploy/#gce-gke"
+echo ""
+
+echo "Check pods in ingress-nginx namespace:"
+echo "  - kubectl get pods --namespace=ingress-nginx"
+echo ""
+
+echo "Check nginx external ip address:"
+echo "  - kubectl get service ingress-nginx-controller --namespace=ingress-nginx"
+echo ""

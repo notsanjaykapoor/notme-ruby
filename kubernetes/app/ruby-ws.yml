@@ -1,0 +1,87 @@
+# api deployment and service
+
+#
+# pod termination:
+# https://cloud.google.com/blog/products/gcp/kubernetes-best-practices-terminating-with-grace
+#
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ruby-ws
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      name: ruby-ws
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        # these labels will be used by the service definition
+        name: ruby-ws
+    spec:
+      containers:
+        - name: app
+          command: ["supervisord", "-c", "/usr/app/src/supervisor/supervisor.ws.conf"]
+          image: gcr.io/notme-330419/ruby-async:c1a17042adb2800b1c29bbc99cd6dacaf8234474
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "100M"
+            limits:
+              memory: "300M"
+      terminationGracePeriodSeconds: 30
+
+---
+
+#
+# example port forward from service to local port 7070:
+#   - kubectl port-forward service/ruby-ws 7070:80
+#
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruby-ws
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+  selector:
+    # identifies the set of pods to load balance traffic to
+    name: ruby-ws
+  type: ClusterIP # accessible inside cluster only
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ruby-ws-ingress
+spec:
+  rules:
+  - host: ruby-ws.notme.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ruby-ws
+            port:
+              number: 80
+  ingressClassName: nginx
