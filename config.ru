@@ -20,24 +20,23 @@ class App < Roda
 
   before do
     env[:start] = ::Async::Clock.now
-    env[:rid] = ULID.generate()
 
-    Console.logger.info("Rack", "#{env[:rid]} #{request.request_method.downcase} #{request.path}")
+    Thread.current[:rid] = ULID.generate()
+
+    Console.logger.info("Rack", "#{Thread.current[:rid]} #{request.request_method.downcase} #{request.path}")
   end
 
   after do |rack_code, rack_object|
     time_ms = ((::Async::Clock.now - env[:start])*1000).round(3)
 
-    Console.logger.info("Rack", "#{env[:rid]} #{request.request_method.downcase} #{request.path} #{rack_code} #{time_ms}ms")
+    Console.logger.info("Rack", "#{Thread.current[:rid]} #{request.request_method.downcase} #{request.path} #{rack_code} #{time_ms}ms")
   end
 
   route do |r|
     r.post "graphql" do
       env[:api_name] = "gql"
 
-      gql_context = {
-        rid: env[:rid],
-      }
+      gql_context = {}
 
       gql_params = request.params
 

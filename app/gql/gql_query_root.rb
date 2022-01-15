@@ -14,7 +14,6 @@ class GqlQueryRoot < GraphQL::Schema::Object
 
   def stocks_list(query:, offset: 0, limit: 20)
     ::GqlService::Stocks::List.new(
-      rid: context[:rid],
       query: query,
       offset: offset,
       limit: limit,

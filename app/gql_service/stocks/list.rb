@@ -4,8 +4,7 @@ module GqlService
   module Stocks
     class List
 
-      def initialize(rid:, query:, offset:, limit:)
-        @rid = rid
+      def initialize(query:, offset:, limit:)
         @query = query
         @offset = offset
         @limit = limit
@@ -27,7 +26,7 @@ module GqlService
       def call
         struct = @struct.new(0, [], [])
 
-        Console.logger.info(self, "#{@rid} query #{@query}")
+        Console.logger.info(self, "#{Thread.current[:rid]} query #{@query}")
 
         begin
           struct_tokens = ::Services::Database::QueryTokens.new(
