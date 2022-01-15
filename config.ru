@@ -27,7 +27,7 @@ class App < Roda
   after do |rack_code, rack_object|
     time_ms = ((::Async::Clock.now - env[:start])*1000).round(3)
 
-    Console.logger.info("Rack", "#{request.request_method.downcase} #{request.path} #{rack_code} #{time_ms}ms")
+    Console.logger.info("Rack", "#{request.request_method.downcase} #{request.path} #{rack_code} #{time_ms}ms", {code: rack_code, ms: time_ms})
   end
 
   route do |r|
