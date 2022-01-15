@@ -1,3 +1,0 @@
-#!/bin/sh
-
-kubectl port-forward service/ruby-async 3030:80

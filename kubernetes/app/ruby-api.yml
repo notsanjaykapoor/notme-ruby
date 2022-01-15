@@ -10,13 +10,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ruby-async
+  name: ruby-api
 spec:
   replicas: 2
   revisionHistoryLimit: 0
   selector:
     matchLabels:
-      name: ruby-async
+      name: ruby-api
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -26,12 +26,12 @@ spec:
     metadata:
       labels:
         # these labels will be used by the service definition
-        name: ruby-async
+        name: ruby-api
     spec:
       containers:
         - name: app
           command: ["supervisord", "-c", "/usr/app/src/supervisor/supervisor.conf"]
-          image: gcr.io/notme-330419/ruby-async:c1a17042adb2800b1c29bbc99cd6dacaf8234474
+          image: gcr.io/notme-330419/ruby-async:aa46e98b30f1c47d32fce7803fec5c1c02f729d5
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 3
@@ -62,13 +62,13 @@ spec:
 
 #
 # example port forward from service to local port 3030:
-#   - kubectl port-forward service/ruby-async 3030:80
+#   - kubectl port-forward service/ruby-api 3030:80
 #
 
 apiVersion: v1
 kind: Service
 metadata:
-  name: ruby-async
+  name: ruby-api
 spec:
   ports:
     - name: http
@@ -77,7 +77,7 @@ spec:
       targetPort: 80 # nginx port
   selector:
     # identifies the set of pods to load balance traffic to
-    name: ruby-async
+    name: ruby-api
   type: ClusterIP # accessible inside cluster only
 
 ---
@@ -85,17 +85,17 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ruby-async-ingress
+  name: ruby-api-ingress
 spec:
   rules:
-  - host: ruby-async.notme.com
+  - host: ruby-api.notme.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: ruby-async
+            name: ruby-api
             port:
               number: 80
   ingressClassName: nginx
