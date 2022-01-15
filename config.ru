@@ -53,7 +53,7 @@ class App < Roda
       r.redirect "/ping"
     end
 
-    r.get "ping" do # GET /ping
+    r.on "ping" do # GET /ping
       env[:api_name] = "ping"
 
       ::Api::Ping.new(request: request, response: response).call
