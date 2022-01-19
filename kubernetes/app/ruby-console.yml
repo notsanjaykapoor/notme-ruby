@@ -10,7 +10,7 @@ kind: Deployment
 metadata:
   name: ruby-console
 spec:
-  replicas: 2
+  replicas: 1
   revisionHistoryLimit: 0
   selector:
     matchLabels:
@@ -19,7 +19,7 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 0
-      maxSurge: 2
+      maxSurge: 1
   template:
     metadata:
       labels:

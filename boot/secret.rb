@@ -12,8 +12,6 @@ module Boot
 
       dot_files = _dot_files
 
-      Console.logger.info(self, "dot_files:#{dot_files}")
-
       dot_files.each do |file|
         hash = TomlRB.load_file(file)
 
@@ -21,6 +19,8 @@ module Boot
           ENV[key.to_s] = value
         end
       end
+
+      Console.logger.info(self, "env files loaded #{dot_files}")
 
       struct
     end

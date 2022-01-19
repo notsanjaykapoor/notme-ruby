@@ -34,6 +34,7 @@ RUN bundle install
 # Add app
 
 COPY . /usr/app/src
+COPY .irbrc /usr/app/src/.irbrc
 
 CMD bash
 
