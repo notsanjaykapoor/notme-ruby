@@ -1,0 +1,37 @@
+#!/usr/bin/env ruby
+
+require "console"
+require "optparse"
+
+options = {
+  image_uri: nil,
+  kube_context: "notme",
+  kube_files: Dir.glob("./kubernetes/app/*.yml")
+}
+
+parser = OptionParser.new do |opts|
+  opts.on('--image uri', "full image uri") do |s|
+    options[:image_uri] = s
+  end
+
+  opts.on('-h', '--help', 'help') do
+    puts opts.to_s
+    exit
+  end
+end
+
+parser.parse!
+
+if options[:image_uri].nil? || options[:kube_context].nil?
+  parser.parse!(['cmd', '-h'])
+end
+
+sed_cmd = "sed 's+:image+#{options[:image_uri]}'+g"
+
+options[:kube_files].each do |input_file|
+  output_file = "#{input_file}.latest"
+  Console.logger.info("deployment", output_file)
+  system("#{sed_cmd} #{input_file} > #{output_file}")
+
+  system("kubectl apply -f #{output_file} --context #{options[:kube_context]}")
+end

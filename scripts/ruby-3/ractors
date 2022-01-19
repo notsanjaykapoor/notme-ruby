@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+
+# move with Ractor#send
+r = Ractor.new do
+  obj = Ractor.receive
+  obj << ' world'
+end
+
+str = 'hello'
+puts "original: #{str}"
+r.send str, move: true
+modified = r.take #=> 'hello world'
+
+puts "modified: #{modified}"
+
+# str is moved, and accessing str from this Ractor is prohibited
+
+begin
+  # Error because it touches moved str.
+  str << ' exception' # raise Ractor::MovedError
+rescue Ractor::MovedError => e
+  puts e
+  modified #=> 'hello world'
+else
+  raise 'unreachable'
+end

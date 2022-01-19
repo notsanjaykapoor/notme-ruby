@@ -1,0 +1,75 @@
+#!/usr/bin/env ruby
+
+require "base58"
+require "json"
+require "logger"
+require "net/http"
+require "openssl"
+require "optparse"
+
+options = {
+  auth_uri: "http://localhost:3030/api/v1/auth/pki",
+  key_path: File.expand_path("~/.ssh/id_rsa"),
+  message: "auth",
+  user_id: "sanjay",
+}
+
+parser = OptionParser.new do |opts|
+  opts.on('-k', '--key private key path', "default: ~/.ssh/id_rsa") do |s|
+    options[:key_path] = s
+  end
+
+  opts.on('-m', '--message message', "message to sign") do |s|
+    options[:message] = s
+  end
+
+  opts.on('-u', '--user id', "user id") do |s|
+    options[:user_id] = s
+  end
+
+  opts.on('-s', '--server auth server', "default: #{options[:auth_uri]}") do |s|
+    options[:auth_uri] = s
+  end
+
+  opts.on('-h', '--help', 'help') do
+    puts opts.to_s
+    exit
+  end
+end
+
+parser.parse!
+
+logger = Logger.new(STDOUT)
+
+# sign message using private key
+
+openssl_key = OpenSSL::PKey::RSA.new(File.read(options[:key_path]))
+signed_data_binary = openssl_key.sign(OpenSSL::Digest::SHA256.new, options[:message])
+signed_data_base58 = Base58.binary_to_base58(signed_data_binary)
+
+json_params = {
+  user_id: options[:user_id],
+  message: options[:message],
+  signature: signed_data_base58,
+}
+
+logger.info(
+  json_params
+)
+uri = URI.parse(options[:auth_uri])
+
+request = Net::HTTP::Post.new(uri).tap do |request|
+  request.content_type = "application/json"
+  request.body = ""
+  request.body << json_params.to_json
+end
+
+req_options = {
+  use_ssl: uri.scheme == "https",
+}
+
+response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
+  http.request(request)
+end
+
+logger.info("response:#{response.code}:#{response.body}")

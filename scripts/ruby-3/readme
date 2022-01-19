@@ -1,0 +1,7 @@
+#!/bin/sh
+
+echo "Ruby 3 fibers:"
+echo "  - https://github.com/ruby/ruby/blob/master/doc/fiber.md"
+
+echo "Ruby 3 ractors:"
+echo "  - https://github.com/ruby/ruby/blob/master/doc/ractor.md"
