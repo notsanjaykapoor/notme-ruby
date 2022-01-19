@@ -14,7 +14,7 @@ app = lambda do |env|
     input_queue = ::Async::Queue.new
     output_queue = ::Async::Queue.new
 
-    ::Services::Terminal::Parser.new(
+    ::Services::Terminal::Parse.new(
       input_queue: input_queue,
       output_queue: output_queue,
     ).call

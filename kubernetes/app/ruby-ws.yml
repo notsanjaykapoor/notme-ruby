@@ -31,7 +31,7 @@ spec:
       containers:
         - name: app
           command: ["supervisord", "-c", "/usr/app/src/supervisor/supervisor.ws.conf"]
-          image: gcr.io/notme-330419/ruby-async:c1a17042adb2800b1c29bbc99cd6dacaf8234474
+          image: :image
           imagePullPolicy: Always
           ports:
             - containerPort: 80

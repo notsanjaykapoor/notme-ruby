@@ -31,7 +31,7 @@ spec:
       containers:
         - name: app
           command: ["supervisord", "-c", "/usr/app/src/supervisor/supervisor.conf"]
-          image: gcr.io/notme-330419/ruby-async:aa46e98b30f1c47d32fce7803fec5c1c02f729d5
+          image: :image
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 3

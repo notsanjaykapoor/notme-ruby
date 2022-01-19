@@ -1,6 +1,8 @@
 require "async"
+require "base58"
 require "graphql"
 require "oj"
+require "openssl"
 require "process/metrics"
 require "roda"
 require "sequel"

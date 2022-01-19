@@ -23,7 +23,9 @@ class App < Roda
 
     Thread.current[:rid] = ULID.generate()
 
-    Console.logger.info("Rack", "#{Thread.current[:rid]} #{request.request_method.downcase} #{request.path}")
+    if request.path[/graphql/].blank?
+      Console.logger.info("Rack", "#{Thread.current[:rid]} #{request.request_method.downcase} #{request.path}")
+    end
   end
 
   after do |rack_code, rack_object|
@@ -68,11 +70,11 @@ class App < Roda
     end
 
     r.on "api/v1" do
-      r.on "q" do
-        r.on "add" do # POST|PUT /api/v1/q/add
-          env[:api_name] = "q_add"
+      r.on "auth" do
+        r.post "pki" do # POST /api/v1/auth/pki
+          env[:api_name] = "auth_pki"
 
-          ::Api::V1::Queue::Add.new(request: request, response: response).call
+          ::Api::V1::Auth::Pki.new(request: request, response: response).call
         end
       end
 

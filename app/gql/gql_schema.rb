@@ -2,7 +2,7 @@ class GqlSchema < GraphQL::Schema
   mutation(GqlMutationRoot)
   query(GqlQueryRoot)
 
-  # instrument(:query, ::GqlQueryMetrics)
+  instrument(:query, ::GqlMetrics)
 
   # if ENV["RACK_ENV"][/development/]
   #   # create analyzers to log data
