@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
         - name: app
-          command: ["supervisord", "-c", "/usr/app/src/supervisor/supervisor.conf"]
+          command: ["supervisord", "-c", "/usr/app/src/supervisor/supervisor.api.conf"]
           image: :image
           imagePullPolicy: Always
           livenessProbe:

@@ -1,0 +1,40 @@
+#
+# pod termination:
+# https://cloud.google.com/blog/products/gcp/kubernetes-best-practices-terminating-with-grace
+#
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ruby-console
+spec:
+  replicas: 2
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      name: ruby-console
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        # these labels will be used by the service definition
+        name: ruby-console
+    spec:
+      containers:
+        - name: app
+          command: ["supervisord", "-c", "/usr/app/src/supervisor/supervisor.console.conf"]
+          image: :image
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: "20m"
+              memory: "200M"
+            limits:
+              memory: "500M"
+      terminationGracePeriodSeconds: 30
