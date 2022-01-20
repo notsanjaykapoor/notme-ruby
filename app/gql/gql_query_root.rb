@@ -8,6 +8,13 @@ class GqlQueryRoot < GraphQL::Schema::Object
     argument :signature, String, required: true, camelize: false
   end
 
+  field :cities_list, ::GqlResponses::CitiesList, null: false, camelize: false do
+    description "list cities"
+    argument :query, String, required: true, camelize: false
+    argument :offset, Integer, required: false, camelize: false
+    argument :limit, Integer, required: false, camelize: false
+  end
+
   field :stocks_list, ::GqlResponses::StocksList, null: false, camelize: false do
     description "list stocks"
     argument :query, String, required: true, camelize: false
@@ -24,6 +31,14 @@ class GqlQueryRoot < GraphQL::Schema::Object
       user_id: user_id,
       message: message,
       signature: signature,
+    ).call
+  end
+
+  def cities_list(query:, offset: 0, limit: 20)
+    ::GqlService::Cities::List.new(
+      query: query,
+      offset: offset,
+      limit: limit,
     ).call
   end
 

@@ -1,0 +1,22 @@
+#!/usr/bin/env ruby
+
+require "graphlient"
+require "optparse"
+
+logger = Logger.new(STDOUT)
+event = "gql_client"
+
+graphql_server = "http://127.0.0.1:3030/graphql"
+schema_path = "./gql_schema.json"
+
+client = Graphlient::Client.new(
+  graphql_server,
+  {
+    headers: {},
+    schema_path: schema_path,
+  }.compact
+)
+
+client.schema.dump!
+
+logger.info("gql schema download completed: #{schema_path}")

@@ -1,5 +1,6 @@
 require "async"
 require "async/websocket/adapters/rack"
+require "logger"
 
 # boot app
 
@@ -14,7 +15,7 @@ app = lambda do |env|
     input_queue = ::Async::Queue.new
     output_queue = ::Async::Queue.new
 
-    ::Services::Terminal::Parse.new(
+    ::Services::Ws::Parse.new(
       input_queue: input_queue,
       output_queue: output_queue,
     ).call

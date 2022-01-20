@@ -49,6 +49,10 @@ class App < Roda
         operation_name: gql_params["operationName"],
       )
 
+      if gql_result["errors"].present?
+        Console.logger.error("Rack", gql_result["errors"])
+      end
+
       gql_result.to_h
     end
 
@@ -88,6 +92,15 @@ class App < Roda
             ticker: ticker
           ).call
         end
+      end
+
+      r.on "weather" do # POST|PUT /api/v1/weather
+        env[:api_name] = "weather_update"
+
+        ::Api::V1::Weather::Update.new(
+          request: request,
+          response: response,
+        ).call
       end
     end
 

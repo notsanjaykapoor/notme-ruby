@@ -3,7 +3,6 @@ require "base58"
 require "graphql"
 require "oj"
 require "openssl"
-require "process/metrics"
 require "roda"
 require "sequel"
 require "toml-rb"
@@ -12,6 +11,8 @@ require "ulid"
 Console.logger.info("Boot", "starting")
 
 ::Sequel.extension(:fiber_concurrency, :pg_array_ops, :pg_json_ops)
+::Sequel.datetime_class = Time
+::Sequel.default_timezone = :utc
 
 require "./boot/database.rb"
 require "./boot/json.rb"
