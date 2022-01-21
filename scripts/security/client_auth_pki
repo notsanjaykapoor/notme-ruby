@@ -10,7 +10,7 @@ require "optparse"
 options = {
   auth_uri: "http://localhost:3030/api/v1/auth/pki",
   key_path: File.expand_path("~/.ssh/id_rsa"),
-  message: "auth",
+  message: "sanjay",
   user_id: "sanjay",
 }
 
@@ -19,12 +19,13 @@ parser = OptionParser.new do |opts|
     options[:key_path] = s
   end
 
-  opts.on('-m', '--message message', "message to sign") do |s|
-    options[:message] = s
-  end
+  # opts.on('-m', '--message message', "message to sign") do |s|
+  #   options[:message] = s
+  # end
 
   opts.on('-u', '--user id', "user id") do |s|
     options[:user_id] = s
+    options[:message] = s
   end
 
   opts.on('-s', '--server auth server', "default: #{options[:auth_uri]}") do |s|
@@ -41,10 +42,15 @@ parser.parse!
 
 logger = Logger.new(STDOUT)
 
+# add message timestamp
+
+time_now = Time.now.utc.strftime("%Y%m%dT%H%M%SZ")
+options[:message] = "#{options[:message]}:#{time_now}"
+
 # sign message using private key
 
-openssl_key = OpenSSL::PKey::RSA.new(File.read(options[:key_path]))
-signed_data_binary = openssl_key.sign(OpenSSL::Digest::SHA256.new, options[:message])
+private_key = OpenSSL::PKey::RSA.new(File.read(options[:key_path]))
+signed_data_binary = private_key.sign(OpenSSL::Digest::SHA256.new, options[:message])
 signed_data_base58 = Base58.binary_to_base58(signed_data_binary)
 
 json_params = {

@@ -29,12 +29,12 @@ module Services
 
           # verify signature with user's public key
 
-          openssl_key = OpenSSL::PKey::RSA.new(File.read(@key_path))
+          public_key = OpenSSL::PKey::RSA.new(File.read(@key_path))
 
-          result = openssl_key.verify(
+          result = public_key.verify(
             OpenSSL::Digest::SHA256.new,
             Base58.base58_to_binary(@signature), # convert base58 to binary
-            @message
+            @message,
           )
 
           if !result
@@ -42,6 +42,21 @@ module Services
             struct.errors.push("invalid signature")
 
             return struct
+          end
+
+          if @message[/^#{@user_id}:\d{8}T\d{6}Z$/]
+            # check timestamp
+            _, timestamp = @message.split(":")
+
+            time_diff = Time.now.utc.to_i - Time.parse(timestamp).to_i
+
+            if !time_diff.between?(0, 300)
+              # invalid timestamp
+              struct.code = 400
+              struct.errors.push("invalid timestamp")
+
+              return struct
+            end
           end
         rescue => e
           Console.logger.error(self, e)

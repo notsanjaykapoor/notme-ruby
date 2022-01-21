@@ -30,7 +30,7 @@ sed_cmd = "sed 's+:image+#{options[:image_uri]}'+g"
 
 options[:kube_files].each do |input_file|
   output_file = "#{input_file}.latest"
-  Console.logger.info("deployment", output_file)
+  Console.logger.info("kube_deploy", output_file)
   system("#{sed_cmd} #{input_file} > #{output_file}")
 
   system("kubectl apply -f #{output_file} --context #{options[:kube_context]}")
