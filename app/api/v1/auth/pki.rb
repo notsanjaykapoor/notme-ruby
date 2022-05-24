@@ -12,9 +12,8 @@ module Api
           @response = response
 
           @params = @request.params
-          @user_id = @request["user_id"].to_s
-          @message = @request["message"].to_s
-          @signature = @request["signature"].to_s
+          @message = @request["message"] # json object
+          @signature = @request["signature"] # base58 string
 
           @key_path = "#{PKI_DIR}/#{@user_id}.pub.pem"
 
@@ -22,15 +21,18 @@ module Api
         end
 
         def call
-          Console.logger.info(self, "#{Thread.current[:rid]} user_id #{@user_id}")
+          Console.logger.info(self, "#{Thread.current[:rid]} message #{@message.to_s}")
 
           struct_auth = ::Services::Auth::Pki.new(
-            user_id: @user_id,
             message: @message,
             signature: @signature,
           ).call
 
-          Console.logger.info(self, "#{Thread.current[:rid]} user_id #{@user_id} code #{struct_auth.code}")
+          Console.logger.info(self, "#{Thread.current[:rid]} code #{struct_auth.code}")
+
+          if struct_auth.code.nonzero?
+            @response.status = struct_auth.code
+          end
 
           {
             code: struct_auth.code,

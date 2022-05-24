@@ -6,11 +6,15 @@ module Services
 
       PKI_DIR = "./pki"
 
-      def initialize(user_id:, message:, signature:)
-        @user_id = user_id
+      def initialize(message:, signature:)
         @message = message
         @signature = signature
 
+        if !@message.is_a?(Hash)
+          raise ArgumentError, "hash expected"
+        end
+
+        @user_id = @message["user_id"]
         @key_path = "#{PKI_DIR}/#{@user_id}.pub.pem"
 
         @struct = Struct.new(:code, :user_id, :errors)
@@ -33,8 +37,8 @@ module Services
 
           result = public_key.verify(
             OpenSSL::Digest::SHA256.new,
-            Base58.base58_to_binary(@signature), # convert base58 to binary
-            @message,
+            Base58.base58_to_binary(@signature), # base58 to binary
+            @message.to_s, # message digest
           )
 
           if !result

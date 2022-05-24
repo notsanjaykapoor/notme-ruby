@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require "base58"
+require "console"
 require "json"
 require "logger"
 require "net/http"
@@ -40,28 +41,33 @@ end
 
 parser.parse!
 
-logger = Logger.new(STDOUT)
+subject = "Auth Client"
 
-# add message timestamp
+# build message, keys as strings vs symbols is important here
 
-time_now = Time.now.utc.strftime("%Y%m%dT%H%M%SZ")
-options[:message] = "#{options[:message]}:#{time_now}"
+message = {
+  "timestamp" => Time.now.utc.strftime("%Y%m%dT%H%M%SZ"),
+  "user_id" => options[:user_id],
+}
 
 # sign message using private key
 
 private_key = OpenSSL::PKey::RSA.new(File.read(options[:key_path]))
-signed_data_binary = private_key.sign(OpenSSL::Digest::SHA256.new, options[:message])
-signed_data_base58 = Base58.binary_to_base58(signed_data_binary)
+
+signature = Base58.binary_to_base58(
+  private_key.sign(
+    OpenSSL::Digest::SHA256.new,
+    message.to_s,
+  )
+)
 
 json_params = {
-  user_id: options[:user_id],
-  message: options[:message],
-  signature: signed_data_base58,
+  message: message,
+  signature: signature,
 }
 
-logger.info(
-  json_params
-)
+Console.logger.info(subject, json_params)
+
 uri = URI.parse(options[:auth_uri])
 
 request = Net::HTTP::Post.new(uri).tap do |request|
@@ -78,4 +84,4 @@ response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
   http.request(request)
 end
 
-logger.info("response:#{response.code}:#{response.body}")
+Console.logger.info(subject, "#{response.body}")
