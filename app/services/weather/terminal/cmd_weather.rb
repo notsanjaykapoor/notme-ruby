@@ -20,8 +20,8 @@ module Services
             query: @city
           ).call
 
-          if struct_get.nonzero?
-            struct.code = struct_get.code
+          if (code = struct_get.code) > 0
+            struct.code = code
             struct.message = struct_get.errors.join(", ")
 
             return struct
@@ -29,7 +29,7 @@ module Services
 
           # update database
 
-          struct_update = ::Services::Weather::Update.new(
+          struct_update = ::Service::City::Update.new(
             object: struct_get.data
           ).call
 
@@ -40,7 +40,7 @@ module Services
             return struct
           end
 
-          struct.message = "weather #{@city} updated"
+          struct.message = "#{@city} temp #{struct_update.temp}"
 
           struct
         end

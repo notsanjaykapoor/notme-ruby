@@ -14,6 +14,7 @@ module Services
 
           @http = ::Services::Weather::Api::Http.instance
           @endpoint = "https://api.openweathermap.org/data/2.5/weather"
+          @struct = Struct.new(:code, :data, :errors)
         end
 
         #
@@ -21,11 +22,7 @@ module Services
         #
 
         def call
-          struct = OpenStruct.new(
-            code: 0,
-            data: nil,
-            errors: [],
-          )
+          struct = @struct.new(0, nil, [])
 
           begin
             params = {

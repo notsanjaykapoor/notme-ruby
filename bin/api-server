@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+
+require "optparse"
+
+options = {
+  port: "3030"
+}
+
+OptionParser.new do |opt|
+  opt.on('--port port') { |o| options[:port] = o }
+end.parse!
+
+env = ENV["RACK_ENV"] || "dev"
+port = options[:port]
+
+# note: falcon --port by default enables ipv6, and that can cause "Cannot assign requested address" issues
+system("OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES RACK_ENV=#{env} bundle exec falcon --bind http://0.0.0.0:#{port} --count 2 --config config.api.ru")

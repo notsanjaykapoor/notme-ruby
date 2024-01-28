@@ -1,0 +1,58 @@
+#!/usr/bin/env ruby
+
+require "async"
+require "async/http/endpoint"
+require "async/websocket/client"
+require "colorize"
+require "json"
+require "optparse"
+require "protocol/websocket/json_message"
+
+options = {
+  port: "7070"
+}
+
+OptionParser.new do |opt|
+  opt.on('-p', '--port port') { |o| options[:port] = o }
+end.parse!
+
+URL = "http://localhost:#{options[:port]}"
+
+Async do |task|
+  endpoint = Async::HTTP::Endpoint.parse(URL)
+
+  stdin = Async::IO::Stream.new(
+		Async::IO::Generic.new($stdin)
+	)
+
+  Async::WebSocket::Client.connect(endpoint) do |conn|
+    puts("client connected on port #{options[:port]} ...".colorize(:yellow))
+
+    stdin_task = task.async do
+      # read and send input
+      while line = stdin.read_until("\n")
+				message = Protocol::WebSocket::JSONMessage.generate({topic: line, message: ""})
+				message.send(conn)
+				conn.flush
+			end
+		end
+
+    # read and print responses
+    while json_message = conn.read
+      message_hash = JSON.parse(json_message.to_str)
+
+      Console.logger.info(self, message_hash)
+
+      code = message_hash["code"]
+      message = message_hash["message"]
+
+      if code == 0
+        puts("#{message}".colorize(:blue))
+      else
+        puts("#{message}".colorize(:red))
+      end
+    end
+  ensure
+    stdin_task&.stop
+  end
+end

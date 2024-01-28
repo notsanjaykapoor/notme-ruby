@@ -45,7 +45,7 @@ module Api
 
           # create or update city
 
-          struct_update = ::Services::Weather::Update.new(
+          struct_update = ::Service::City::Update.new(
             object: struct_get.data
           ).call
 

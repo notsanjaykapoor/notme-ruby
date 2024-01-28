@@ -20,7 +20,7 @@ module Services
             struct.tokens = tokens
 
             struct.code = 400
-            struct.message = "weather :city"
+            struct.message = "weather :city, e.g. 'weather chicago'"
           in [/weather/i => cmd, *city]
             struct.cmd = cmd.downcase
             struct.city = city.join(" ")
@@ -36,10 +36,10 @@ module Services
             struct.tokens = tokens
 
             struct.code = 400
-            struct.message = "weather :city"
+            struct.message = "weather :city, e.g. 'weather chicago'"
           else
             struct.code = 400
-            struct.message = "weather :city"
+            struct.message = "weather :city, e.g. 'weather chicago'"
           end
 
           struct

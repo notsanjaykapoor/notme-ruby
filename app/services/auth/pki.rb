@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Services
+module Service
   module Auth
     class Pki
 
@@ -24,7 +24,7 @@ module Services
         struct = @struct.new(0, @user_id, [])
 
         begin
-          if !File.exists?(@key_path)
+          if !File.exist?(@key_path)
             struct.code = 400
             struct.errors.push("invalid user")
 

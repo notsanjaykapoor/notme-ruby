@@ -1,0 +1,43 @@
+<div class="col-start-2 col-span-8 font-semibold px-4 text-left text-sm text-indigo-600" id="weather-table-count" hx-get="/weather/count" hx-trigger="weatherDeleteOk from:body">
+  <%= render "weather_count" %>
+</div>
+<table class="col-start-2 col-span-8">
+  <thead class="font-normal text-left text-[0.8125rem] leading-6 text-zinc-800">
+    <tr>
+      <th class="p-4 pr-6">name</th>
+      <th class="p-4 pr-6">temp</th>
+      <th class="p-4 pr-6">feels like</th>
+      <th class="p-4 pr-6">last updated</th>
+      <th class="p-4 pr-6"></th>
+    </tr>
+  </thead>
+  <tbody id="weather-data">
+    <% @cities.each do |city| %>
+      <tr class="group hover:bg-zinc-50 odd:bg-white even:bg-slate-50 text-sm">
+        <% seconds_ago = city.dig(:seconds_ago) %>
+    
+        <td class="p-4 pr-6 font-normal"><%= city.dig(:name) %></td>
+        <td class="p-4 pr-6 font-normal"><%= city.dig(:temp) %></td>
+        <td class="p-4 pr-6 font-normal"><%= city.dig(:feels_like) %></td>
+        <td class="p-4 pr-6 font-normal text-xs">
+          <% if seconds_ago < 120 %>
+            just now
+          <% elsif seconds_ago < (60 * 60) %>
+            <%= seconds_ago / 60 %> mins ago
+          <% elsif seconds_ago < (60 * 60 * 48) %>
+            <%= seconds_ago / (60 * 60) %> hours ago
+          <% else %>
+            <a class="cursor-pointer hover:underline text-blue-800 font-semibold" hx-post=<%= "/weather/#{city.dig(:id)}" %> hx-target="#weather-table">
+              <%= seconds_ago / (60 * 60 * 24) %> days ago
+            </a>
+          <% end %>
+        </td>
+        <td class="p-4 pr-6 font-normal text-sm">
+          <a class="cursor-pointer hover:underline text-orange-500 font-semibold p-1 text-xs" hx-delete=<%= "/weather/#{city.dig(:id)}" %> hx-target="closest tr" hx-swap="outerHTML swap:1s">
+            x
+          </a>
+        </td>
+      </tr>
+    <% end %>    
+  </tbody>
+</table>

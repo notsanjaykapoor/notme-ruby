@@ -30,7 +30,7 @@ module Boot
     def _dot_files
       dot_file = ["./.env", ENV["RACK_ENV"]].compact.join(".")
 
-      [dot_file].select{ |file| File.exists?(file) }
+      [dot_file].select{ |file| File.exist?(file) }
     end
 
   end

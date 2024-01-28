@@ -1,11 +1,14 @@
-FROM ruby:3.1.0
+FROM ruby:3.3.0
+
+ARG NOTME_VERSION=version
 
 # throw errors if Gemfile has been modified since Gemfile.lock
 RUN bundle config --global frozen 1
 
-WORKDIR /usr/app/src
+WORKDIR /app
 
-ENV RACK_ENV production
+ENV RACK_ENV prd
+ENV NOTME_VERSION=$NOTME_VERSION
 
 RUN apt-get update && apt-get install -qq -yq --no-install-recommends \
   busybox \
@@ -26,15 +29,15 @@ RUN apt-get update && apt-get install -qq -yq --no-install-recommends \
 
 # Add Gemfile and install gems using bundler
 
-COPY Gemfile /usr/app/src/
-COPY Gemfile.lock /usr/app/src/
+COPY Gemfile /app
+COPY Gemfile.lock /app
 
 RUN bundle install
 
 # Add app
 
-COPY . /usr/app/src
-COPY .irbrc /usr/app/src/.irbrc
+COPY . /app
+COPY .irbrc /app/.irbrc
 
 CMD bash
 

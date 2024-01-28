@@ -35,7 +35,7 @@ class GqlQueryRoot < GraphQL::Schema::Object
   end
 
   def cities_list(query:, offset: 0, limit: 20)
-    ::GqlService::Cities::List.new(
+    ::Service::City::List.new(
       query: query,
       offset: offset,
       limit: limit,
@@ -43,7 +43,7 @@ class GqlQueryRoot < GraphQL::Schema::Object
   end
 
   def stocks_list(query:, offset: 0, limit: 20)
-    ::GqlService::Stocks::List.new(
+    ::Service::Stock::List.new(
       query: query,
       offset: offset,
       limit: limit,

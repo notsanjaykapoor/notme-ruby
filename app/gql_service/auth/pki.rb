@@ -17,7 +17,7 @@ module GqlService
 
         Console.logger.info(self, "#{Thread.current[:rid]} user_id #{@user_id}")
 
-        struct_auth = ::Services::Auth::Pki.new(
+        struct_auth = ::Service::Auth::Pki.new(
           user_id: @user_id,
           message: @message,
           signature: @signature,

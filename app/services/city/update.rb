@@ -1,33 +1,33 @@
 # frozen_string_literal: true
 
-module Services
-  module Weather
+module Service
+  module City
     class Update
 
       def initialize(object:)
         @object = object
+        @name = @object.dig("name")
 
-        @name = @object["name"]
-
-        @struct = Struct.new(:code, :city_id, :errors)
+        @struct = Struct.new(:code, :city_id, :temp, :errors)
       end
 
       def call
-        struct = @struct.new(0, nil, [])
+        struct = @struct.new(0, nil, 0.0, [])
+
+        Console.logger.info(self, "#{Thread.current[:rid]} city '#{@name}'")
 
         begin
-          city = City.first(name: @name)
+          city = ::Model::City.first(name: @name)
 
           if city.blank?
             # create city
-
             create_params = {
               country: @object["sys"]["country"],
               name: @name,
               temp: @object["main"]["temp"],
             }.merge(@object["coord"]) # lat, lon
 
-            city = City.create(create_params)
+            city = ::Model::City.create(create_params)
           end
 
           # update city weather data
@@ -46,6 +46,7 @@ module Services
           )
 
           struct.city_id = city.id
+          struct.temp = @object["main"]["temp"]
         rescue => e
           struct.code = 500
           struct.errors.push(e.message)
@@ -57,3 +58,4 @@ module Services
     end
   end
 end
+  

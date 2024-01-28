@@ -17,6 +17,7 @@ class App < Roda
   plugin :json, serializer: ::Oj.method(:dump)
   plugin :json_parser, parser: ::Oj.method(:load)
   plugin :request_headers
+  plugin :render
 
   before do
     env[:start] = ::Async::Clock.now
@@ -58,7 +59,11 @@ class App < Roda
 
     # GET /
     r.root do
-      r.redirect "/ping"
+      if request.host.include?("notme.one")
+        r.redirect "/me"
+      else
+        r.redirect "/weather"
+      end
     end
 
     r.on "ping" do # GET /ping
@@ -71,6 +76,14 @@ class App < Roda
       env[:api_name] = "startup"
 
       ::Api::Startup.new(request: request, response: response).call
+    end
+
+    r.get "version" do # GET /version
+      env[:api_name] = "version"
+
+      {
+        "version": ENV["NOTME_VERSION"] || ENV["RACK_ENV"]
+      }
     end
 
     r.on "api/v1" do
@@ -104,6 +117,130 @@ class App < Roda
       end
     end
 
+    r.get "me" do # GET /me
+      @version = "dev"
+      view("me")
+    end
+
+    r.on "weather" do
+      r.post "add" do # post /weather/add
+        name = r.params["name"]
+
+        # get weather
+
+        struct_get = ::Services::Weather::Api::Get.new(
+          query: name
+        ).call
+
+        if struct_get.code == 0
+          # update city with weather data
+          ::Service::City::Update.new(
+            object: struct_get.data
+          ).call
+        end
+
+        struct_list = ::Service::City::List.new(
+          query: "",
+          offset: 0,
+          limit: 50,
+        ).call
+
+        @cities = struct_list.cities
+        @cities_count = @cities.length
+
+        # render without layout
+        render("weather_table")
+      end
+
+      r.post "search" do # post /weather/search
+        query_raw = r.params["q"]
+        query = "name:~#{query_raw}"
+
+        struct_list = ::Service::City::List.new(
+          query: query,
+          offset: 0,
+          limit: 50,
+        ).call
+
+        @cities = struct_list.cities
+        @cities_count = @cities.length
+
+        # render without layout
+        render("weather_table")
+      end
+
+      r.get "count" do # get /weather/count
+        struct_list = ::Service::City::List.new(
+          query: "",
+          offset: 0,
+          limit: 50,
+        ).call
+
+        @cities_count = struct_list.cities.length
+
+        # render without layout
+        render("weather_count")
+      end
+
+      r.get do # get /weather
+        struct_list = ::Service::City::List.new(
+          query: "",
+          offset: 0,
+          limit: 50,
+        ).call
+
+        @cities = struct_list.cities
+        @cities_count = @cities.length
+        @text = "Weather"
+
+        view("weather_list")
+      end
+
+      r.delete Integer do |id| # delete weather/:id
+        city = ::Model::City.first(id: id)
+
+        if city
+          city.delete
+          # set response trigger event
+          response.headers["HX-Trigger"] = "weatherDeleteOk"
+        end
+
+        view("weather_delete")
+      end
+
+      r.post Integer do |id| # post weather/:id
+        city = ::Model::City.first(id: id)
+
+        if not city
+          r.halt(404)
+        end
+
+        # get weather
+
+        struct_get = ::Services::Weather::Api::Get.new(
+          query: city.name
+        ).call
+
+        if struct_get.code == 0
+          # update city with weather data
+          ::Service::City::Update.new(
+            object: struct_get.data
+          ).call
+        end
+
+        struct_list = ::Service::City::List.new(
+          query: "",
+          offset: 0,
+          limit: 50,
+        ).call
+
+        @cities = struct_list.cities
+        @cities_count = @cities.length
+
+        # render without layout
+        render("weather_table")
+      end
+    end
   end
 end
 

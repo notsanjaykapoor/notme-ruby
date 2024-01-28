@@ -3,6 +3,9 @@ require "base58"
 require "graphql"
 require "oj"
 require "openssl"
+require "opentelemetry-exporter-otlp"
+require "opentelemetry/instrumentation/all"
+require "opentelemetry/sdk"
 require "roda"
 require "sequel"
 require "toml-rb"
@@ -30,6 +33,16 @@ DB = struct_boot_database.connection
 DB.extension(:pg_array, :pg_json)
 
 Console.logger.info("Boot", "database connection initialized")
+
+# initialize opentelemetry
+
+Console.logger.info("Boot", "opentelemetry")
+
+OpenTelemetry::SDK.configure do |c|
+  c.use "OpenTelemetry::Instrumentation::GraphQL"
+  c.use "OpenTelemetry::Instrumentation::Rack"
+  # c.use_all() # enables all trace instrumentation!
+end
 
 # load app files
 

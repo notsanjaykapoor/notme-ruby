@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Services
+module Service
   module Database
     class QueryTokens
 

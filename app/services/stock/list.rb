@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module GqlService
-  module Stocks
+module Service
+  module Stock
     class List
 
       def initialize(query:, offset:, limit:)
@@ -29,7 +29,7 @@ module GqlService
         Console.logger.info(self, "#{Thread.current[:rid]} query #{@query}")
 
         begin
-          struct_tokens = ::Services::Database::QueryTokens.new(
+          struct_tokens = ::Service::Database::QueryTokens.new(
             query: @query
           ).call
 

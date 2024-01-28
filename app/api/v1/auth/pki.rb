@@ -23,7 +23,7 @@ module Api
         def call
           Console.logger.info(self, "#{Thread.current[:rid]} message #{@message.to_s}")
 
-          struct_auth = ::Services::Auth::Pki.new(
+          struct_auth = ::Service::Auth::Pki.new(
             message: @message,
             signature: @signature,
           ).call

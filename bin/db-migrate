@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+
+require "async"
+require "sequel"
+require "toml-rb"
+
+require "./boot/secret.rb"
+
+Boot::Secret.new.call
+
+env = ENV["RACK_ENV"]
+url = ENV["DATABASE_URL"]
+
+if not env
+    puts("missing RACK_ENV")
+    exit(-1)
+end
+
+if not url
+    puts("missing DATABASE_URL")
+    exit(-1)
+end
+
+db_name = url.split("/").last
+url_root = url.delete_suffix("/#{db_name}")
+
+Sequel.connect(url_root) do |db|
+    begin
+        db.execute "CREATE DATABASE #{db_name};"
+    rescue Sequel::DatabaseError
+        Console.logger.info("Boot::Migrate", "#{db_name} exists")
+    else
+        Console.logger.info("Boot::Migrate", "#{db_name} created")
+    end
+end
+
+system("sequel -m db/migrations #{url}")
+

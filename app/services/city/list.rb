@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module GqlService
-  module Cities
+module Service
+  module City
     class List
 
       def initialize(query:, offset:, limit:)
@@ -27,14 +27,14 @@ module GqlService
         Console.logger.info(self, "#{Thread.current[:rid]} query #{@query}")
 
         begin
-          struct_tokens = ::Services::Database::QueryTokens.new(
+          struct_tokens = ::Service::Database::QueryTokens.new(
             query: @query
           ).call
 
           tokens = struct_tokens.tokens
 
           sequel_query = _query_filter(
-            query: City,
+            query: ::Model::City,
             tokens: tokens,
           )
 
@@ -43,10 +43,12 @@ module GqlService
           struct.cities = sequel_query.map do |object|
             {
               feels_like: object.feels_like,
+              id: object.id,
               lat: object.lat,
               lon: object.lon,
               name: object.name,
               region: object.region,
+              seconds_ago: Time.now.utc.to_i - object.updated_at_unix,
               tags: object.tags,
               temp: object.temp,
               temp_max: object.temp_max,
@@ -72,7 +74,7 @@ module GqlService
           field = object[:field]
           value = object[:value]
 
-          # map field to kalss and field tuple
+          # map field to klass and field tuple
 
           klass, field_ = _query_map(
             field: field

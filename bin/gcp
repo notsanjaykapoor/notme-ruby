@@ -1,0 +1,222 @@
+#!/usr/bin/env python
+
+import json
+import subprocess
+import time
+
+import click
+import dotenv
+import requests
+import ulid
+
+dotenv.load_dotenv()
+
+DEFAULT_APP_CHECK_INTERVAL = 2
+DEFAULT_APP_CHECK_TIMEOUT = 20
+
+DEFAULT_SSH_CHECK_INTERVAL = 3
+DEFAULT_SSH_CHECK_TIMEOUT = 15
+
+GCP_REPO = "gcr.io/notme-330419/notme-ruby"
+
+@click.group()
+def cli():
+    pass
+
+
+@click.command()
+@click.option("--sha", default="", required=False, help="git repo sha or tag")
+@click.pass_context
+def build(ctx, sha: str):
+    time_start_unix = time.time()
+
+    version = sha or ulid.new()
+
+    print("docker build {version}", end=" ... ", flush=True)
+
+    _docker_build(version=version)
+
+    _print_ok("ok")
+
+    time_end_unix = time.time()
+    time_mins = round((time_end_unix - time_start_unix) / 60, 1)
+
+    _print_ok(f"build completed in {time_mins} mins")
+
+
+@click.command()
+@click.option("--host", default=None, required=True, help="gcp host or ip address")
+@click.option("--user", default="", required=False, help="gcp ssh username")
+@click.option("--site", default="https://ruby.notme.one", required=False, help="site uri")
+@click.pass_context
+def deploy(ctx, host: str, user: str, site: str):
+    time_start_unix = time.time()
+
+    print(f"host {host} check", end=" ... ", flush=True)
+
+    timeout = 0
+    while timeout < DEFAULT_SSH_CHECK_TIMEOUT:
+        code = _host_check(host=host, user=user)
+        if code == 0:
+            break
+        time.sleep(DEFAULT_SSH_CHECK_INTERVAL)
+        timeout += DEFAULT_SSH_CHECK_INTERVAL
+
+    _print_ok(f"ok, {code}")
+
+    print(f"host {host} docker login", end=" ... ", flush=True)
+
+    _docker_login(host=host, user=user)
+
+    _print_ok("ok")
+
+    print(f"host {host} docker app pull", end=" ... ", flush=True)
+
+    _docker_app_pull(host=host, user=user)
+
+    _print_ok("ok")
+
+    print(f"host {host} docker app start", end=" ... ", flush=True)
+
+    _docker_app_restart(host=host, user=user)
+
+    _print_ok("ok")
+
+    print(f"ping {site}", end=" ... ", flush=True)
+
+    timeout = 0
+    while timeout < DEFAULT_APP_CHECK_TIMEOUT:
+        try:
+            r = requests.get(f"{site}/me")
+            if (code := r.status_code) in [0, 200]:
+                break
+        except Exception:
+            code = 500
+        time.sleep(DEFAULT_APP_CHECK_INTERVAL)
+        timeout += DEFAULT_APP_CHECK_INTERVAL
+
+    if code not in [0, 200]:
+        _print_error(f"error {code}")
+        exit(code)
+
+    _print_ok(f"ok, {code}")
+
+    time_end_unix = time.time()
+    time_secs = round((time_end_unix - time_start_unix), 1)
+
+    _print_ok(f"host {host} deploy completed in {time_secs} secs")
+
+
+def _docker_app_pull(host: str, user: str) -> int:
+    response = subprocess.run(
+        f"ssh -t {user}@{host} 'sudo docker image pull {GCP_REPO}:latest'",
+        shell=True,
+        capture_output=True,
+    )
+
+    if response.returncode not in [0]:
+        _print_error(response.stdout.decode("utf-8"))
+        exit(response.returncode)
+
+    return response.returncode
+
+
+def _docker_app_restart(host: str, user: str) -> int:
+    response = subprocess.run(
+        f"ssh -t {user}@{host} 'sudo docker stop notme-ruby-prd'",
+        shell=True,
+        capture_output=True,
+    )
+
+    if response.returncode not in [0, 1]: # 1 means container not running
+        _print_error(response.stdout.decode("utf-8"))
+        exit(response.returncode)
+
+    return _docker_app_start(host=host, user=user)
+
+
+def _docker_app_start(host: str, user: str) -> int:
+    response = subprocess.run(
+        f"ssh -t {user}@{host} 'sudo docker run --name notme-ruby-prd --network notme -d --rm -p 5005:5005 {GCP_REPO}:latest /app/bin/api-server --port 5005",
+        shell=True,
+        capture_output=True,
+    )
+
+    if response.returncode != 0:
+        _print_error(response.stdout.decode("utf-8"))
+        exit(response.returncode)
+
+    return response.returncode
+
+
+def _docker_build(version: str) -> int:
+    response = subprocess.run(
+        f"docker build -t {GCP_REPO}:{version} -t {GCP_REPO}:latest --platform linux/amd64 --build-arg NOTME_VERSION={version} .",
+        shell=True,
+        capture_output=False,
+    )
+
+    if response.returncode != 0:
+        exit(response.returncode)
+
+    response = subprocess.run(
+        f"docker push {GCP_REPO}:{version}",
+        shell=True,
+        capture_output=False,
+    )
+
+    if response.returncode != 0:
+        exit(response.returncode)
+
+    response = subprocess.run(
+        f"docker push {GCP_REPO}:latest",
+        shell=True,
+        capture_output=False,
+    )
+
+    if response.returncode != 0:
+        exit(response.returncode)
+
+    return response.returncode
+
+
+def _docker_login(host: str, user: str) -> int:
+    response = subprocess.run(
+        f"ssh -t {user}@{host} 'gcloud auth print-access-token | sudo docker login -u oauth2accesstoken --password-stdin gcr.io'",
+        shell=True,
+        capture_output=True,
+    )
+
+    if response.returncode != 0:
+        _print_error(response.stdout.decode("utf-8"))
+        exit(response.returncode)
+
+    return response.returncode
+
+
+def _host_check(host: str, user: str) -> int:
+    ssh_code = subprocess.run(
+        f"ssh -t {user}@{host} 'ls'",
+        shell=True,
+        capture_output=True,
+    ).returncode
+
+    return ssh_code
+
+
+def _print_error(s: str):
+    print("\x1b[1;31m" + s + "\x1b[0m", flush=True)
+
+
+def _print_ok(s: str):
+    print("\x1b[1;32m" + s + "\x1b[0m", flush=True)
+
+
+def _print_status(s: str):
+    print("\x1b[1;36m" + s + "\x1b[0m", flush=True)
+
+
+cli.add_command(build)
+
+if __name__ == "__main__":
+    cli()
