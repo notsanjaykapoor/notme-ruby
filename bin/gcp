@@ -46,7 +46,7 @@ def build(ctx, sha: str):
 
 @click.command()
 @click.option("--host", default=None, required=True, help="gcp host or ip address")
-@click.option("--user", default="", required=False, help="gcp ssh username")
+@click.option("--user", default=None, required=True, help="gcp ssh username")
 @click.option("--site", default="https://ruby.notme.one", required=False, help="site uri")
 @click.pass_context
 def deploy(ctx, host: str, user: str, site: str):
@@ -82,12 +82,14 @@ def deploy(ctx, host: str, user: str, site: str):
 
     _print_ok("ok")
 
-    print(f"ping {site}", end=" ... ", flush=True)
+    site_ping = f"{site}/version"
+
+    print(f"ping {site_ping}", end=" ... ", flush=True)
 
     timeout = 0
     while timeout < DEFAULT_APP_CHECK_TIMEOUT:
         try:
-            r = requests.get(f"{site}/me")
+            r = requests.get(site_ping)
             if (code := r.status_code) in [0, 200]:
                 break
         except Exception:
@@ -123,7 +125,7 @@ def _docker_app_pull(host: str, user: str) -> int:
 
 def _docker_app_restart(host: str, user: str) -> int:
     response = subprocess.run(
-        f"ssh -t {user}@{host} 'sudo docker stop notme-ruby-prd'",
+        f"ssh -t {user}@{host} 'sudo docker stop ruby-prd'",
         shell=True,
         capture_output=True,
     )
@@ -137,7 +139,7 @@ def _docker_app_restart(host: str, user: str) -> int:
 
 def _docker_app_start(host: str, user: str) -> int:
     response = subprocess.run(
-        f"ssh -t {user}@{host} 'sudo docker run --name notme-ruby-prd --network notme -d --rm -p 5005:5005 {GCP_REPO}:latest /app/bin/api-server --port 5005",
+        f"ssh -t {user}@{host} 'sudo docker run --name ruby-prd --network notme -d --rm -p 6000:6000 {GCP_REPO}:latest /app/bin/api-server --port 6000'",
         shell=True,
         capture_output=True,
     )
@@ -217,6 +219,7 @@ def _print_status(s: str):
 
 
 cli.add_command(build)
+cli.add_command(deploy)
 
 if __name__ == "__main__":
     cli()

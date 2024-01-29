@@ -36,6 +36,8 @@ class App < Roda
   end
 
   route do |r|
+    version = ENV["NOTME_VERSION"] || ENV["RACK_ENV"]
+
     r.post "graphql" do
       env[:api_name] = "gql"
 
@@ -82,7 +84,7 @@ class App < Roda
       env[:api_name] = "version"
 
       {
-        "version": ENV["NOTME_VERSION"] || ENV["RACK_ENV"]
+        "version": version
       }
     end
 
@@ -192,6 +194,7 @@ class App < Roda
         @cities = struct_list.cities
         @cities_count = @cities.length
         @text = "Weather"
+        @version = version
 
         view("weather_list")
       end
@@ -202,7 +205,7 @@ class App < Roda
         if city
           city.delete
           # set response trigger event
-          response.headers["HX-Trigger"] = "weatherDeleteOk"
+          response.headers["HX-Trigger"] = "weatherCountChanged"
         end
 
         view("weather_delete")
