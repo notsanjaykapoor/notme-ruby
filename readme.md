@@ -1,5 +1,10 @@
 ### Intro
 
+A Ruby app built using [Roda](https://github.com/jeremyevans/roda) and [Sequel](https://github.com/jeremyevans/sequel).
+
+The api server supports both rest and graphql endpoints.  The websockets server supports a simple terminal interface.
+
+The app also supports a front-end using the [Tilt](https://github.com/rtomayko/tilt) template engine.
 
 ### Setup
 
@@ -31,7 +36,7 @@ Run tests:
 ./bin/test
 ```
 
-Start api server on a port of your choice:
+Start server on a port of your choice:
 
 ```
 ./bin/api-server --port 5000
@@ -40,7 +45,7 @@ Start api server on a port of your choice:
 The app should now be accessible:
 
 ```
-http://localhost:5000
+http://localhost:5000/ping
 ```
 
 

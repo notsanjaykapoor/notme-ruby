@@ -1,6 +1,7 @@
-<div class="col-start-2 col-span-8 font-semibold px-4 pb-5 text-left text-sm text-indigo-600" id="weather-table-count" hx-get="/weather/count" hx-trigger="weatherCountChanged from:body">
+<div class="col-start-2 col-span-8 font-semibold pl-4 pb-5 text-left text-sm text-indigo-600" id="weather-table-count" hx-get="/weather/count" hx-trigger="weatherCountChanged from:body">
   <%= render "weather_count" %>
 </div>
+
 <table class="col-start-2 col-span-8">
   <thead class="font-normal text-left text-[0.8125rem] leading-6 text-zinc-800">
     <tr>
@@ -42,3 +43,7 @@
     <% end %>    
   </tbody>
 </table>
+
+<% if @cities_filtered == 0 %>
+  <span hx-post="/weather/refresh" hx-target="#weather-table" hx-trigger="every 60s"/>
+<% end %>

@@ -17,7 +17,7 @@
   <%= render "weather_table" %>
 </div>
 
-<div class="container grid grid-cols-10 py-20" hx-post="/weather/add" hx-target="#weather-table" hx-trigger="every 300s">
+<div class="container grid grid-cols-10 py-20">
   <div class="col-start-2 col-span-2 font-light text-xs text-zinc-400">
     @<%= @version %>
   </div>

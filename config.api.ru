@@ -167,6 +167,12 @@ class App < Roda
         @cities = struct_list.cities
         @cities_count = @cities.length
 
+        if query_raw != ""
+          @cities_filtered = 1
+        else
+          @cities_filtered = 0
+        end
+
         # render without layout
         render("weather_table")
       end
@@ -193,6 +199,7 @@ class App < Roda
 
         @cities = struct_list.cities
         @cities_count = @cities.length
+        @cities_filtered = 0
         @text = "Weather"
         @version = version
 
@@ -209,6 +216,21 @@ class App < Roda
         end
 
         view("weather_delete")
+      end
+
+      r.post "refresh" do # post /weather/refresh
+        struct_list = ::Service::City::List.new(
+          query: "",
+          offset: 0,
+          limit: 50,
+        ).call
+
+        @cities = struct_list.cities
+        @cities_count = @cities.length
+        @cities_filtered = 0
+
+        # render without layout
+        render("weather_table")
       end
 
       r.post Integer do |id| # post weather/:id
@@ -239,6 +261,7 @@ class App < Roda
 
         @cities = struct_list.cities
         @cities_count = @cities.length
+        @cities_filtered = 0
 
         # render without layout
         render("weather_table")
