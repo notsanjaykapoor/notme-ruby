@@ -1,4 +1,4 @@
-### Intro
+## Intro
 
 A Ruby app built using [Roda](https://github.com/jeremyevans/roda) and [Sequel](https://github.com/jeremyevans/sequel).
 
@@ -6,7 +6,7 @@ The api server supports both rest and graphql endpoints.  The websockets server 
 
 The app also supports a front-end using the [Tilt](https://github.com/rtomayko/tilt) template engine.
 
-### Setup
+## Setup
 
 This repo uses ruby 3.3 but should work with any recent ruby version.
 
@@ -16,7 +16,7 @@ Install ruby gems:
 bundle install
 ```
 
-Copy .env.example to .env.dev. Set DATABASE_URL to a suitable postgres instance.  Get an openweather token if you want to see the weather example:
+Copy .env.example to .env.dev. Set DATABASE_URL to a suitable postgres instance.  Sign up for an openweather token to use the weather example:
 
 ```
 https://openweathermap.org/
@@ -49,6 +49,19 @@ http://localhost:5000/ping
 ```
 
 
+## Weather App
 
 
+Sign up for an [openweather](https://openweathermap.org) api token to use the weather example.  Set OPENWEATHER_API_TOKEN in your .env.dev.
 
+```
+#.env.dev
+
+OPENWEATHER_API_TOKEN="<your_token_here>"
+```
+
+The weather app:
+
+```
+http://localhost:5000/weather
+```
