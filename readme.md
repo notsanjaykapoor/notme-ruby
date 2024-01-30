@@ -1,6 +1,6 @@
 ## Intro
 
-A Ruby app built using [Roda](https://github.com/jeremyevans/roda) and [Sequel](https://github.com/jeremyevans/sequel).
+A Ruby app built using [Roda](https://github.com/jeremyevans/roda), [Async](https://github.com/socketry/async), [Sequel](https://github.com/jeremyevans/sequel), and [Falcon](https://github.com/socketry/falcon).
 
 The api server supports both rest and graphql endpoints.  The websockets server supports a simple terminal interface.
 
@@ -52,7 +52,7 @@ http://localhost:5000/ping
 ## Weather App
 
 
-Sign up for an [openweather](https://openweathermap.org) api token to use the weather example.  Set OPENWEATHER_API_TOKEN in your .env.dev.
+Sign up for an [openweather](https://openweathermap.org) api token and configure your .env.dev.
 
 ```
 #.env.dev
