@@ -1,6 +1,6 @@
 FROM ruby:3.3.0
 
-ARG NOTME_VERSION=version
+ARG APP_VERSION=version
 
 # throw errors if Gemfile has been modified since Gemfile.lock
 RUN bundle config --global frozen 1
@@ -8,7 +8,7 @@ RUN bundle config --global frozen 1
 WORKDIR /app
 
 ENV RACK_ENV prd
-ENV NOTME_VERSION=$NOTME_VERSION
+ENV APP_VERSION=$APP_VERSION
 
 RUN apt-get update && apt-get install -qq -yq --no-install-recommends \
   busybox \

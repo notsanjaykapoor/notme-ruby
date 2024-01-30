@@ -9,6 +9,7 @@ gem "base58"
 gem "base64"
 gem "colorize"
 gem "csv"
+gem "dotenv"
 gem "falcon"
 gem "graphql", require: false
 gem "http", require: false
@@ -22,9 +23,9 @@ gem "rack-cors", require: false
 gem "roda"
 gem "sequel"
 gem "tilt"
-gem "toml-rb", require: false
 gem "ulid", require: false
 
 group :development, :test do
   gem "debug"
+  gem "rack-test"
 end

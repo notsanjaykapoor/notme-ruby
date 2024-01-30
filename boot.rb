@@ -1,5 +1,6 @@
 require "async"
 require "base58"
+require "dotenv"
 require "graphql"
 require "oj"
 require "openssl"
@@ -8,7 +9,6 @@ require "opentelemetry/instrumentation/all"
 require "opentelemetry/sdk"
 require "roda"
 require "sequel"
-require "toml-rb"
 require "ulid"
 
 Console.logger.info("Boot", "starting")

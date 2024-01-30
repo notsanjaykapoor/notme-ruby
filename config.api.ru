@@ -4,6 +4,8 @@ require "./boot.rb"
 
 require "rack/cors"
 
+CITY_MAX_COUNT_DEFAULT = 2**10
+
 use Rack::Cors do
   allow do
     origins '*'
@@ -36,7 +38,8 @@ class App < Roda
   end
 
   route do |r|
-    version = ENV["NOTME_VERSION"] || ENV["RACK_ENV"]
+    city_max_count = (ENV["APP_CITY_MAX_COUNT"] || CITY_MAX_COUNT_DEFAULT).to_i
+    version = ENV["APP_VERSION"] || ENV["RACK_ENV"]
 
     r.post "graphql" do
       env[:api_name] = "gql"
@@ -61,11 +64,12 @@ class App < Roda
 
     # GET /
     r.root do
-      if request.host.include?("notme.one")
-        r.redirect "/me"
-      else
-        r.redirect "/weather"
-      end
+      r.redirect "/weather"
+      # if request.host.include?("notme.one")
+      #   r.redirect "/me"
+      # else
+      #   r.redirect "/weather"
+      # end
     end
 
     r.on "ping" do # GET /ping
@@ -126,6 +130,10 @@ class App < Roda
 
     r.on "weather" do
       r.post "add" do # post /weather/add
+        if ::Model::City.count() >= city_max_count
+          r.halt(422)
+        end
+
         name = r.params["name"]
 
         # get weather
@@ -149,6 +157,7 @@ class App < Roda
 
         @cities = struct_list.cities
         @cities_count = @cities.length
+        @cities_filtered = 0
 
         # render without layout
         render("weather_table")
@@ -178,13 +187,7 @@ class App < Roda
       end
 
       r.get "count" do # get /weather/count
-        struct_list = ::Service::City::List.new(
-          query: "",
-          offset: 0,
-          limit: 50,
-        ).call
-
-        @cities_count = struct_list.cities.length
+        @cities_count = ::Model::City.count()
 
         # render without layout
         render("weather_count")
@@ -270,4 +273,4 @@ class App < Roda
   end
 end
 
-run App.freeze.app
+run App.app

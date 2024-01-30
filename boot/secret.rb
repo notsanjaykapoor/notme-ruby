@@ -13,11 +13,7 @@ module Boot
       dot_files = _dot_files
 
       dot_files.each do |file|
-        hash = TomlRB.load_file(file)
-
-        hash.each_pair do |key, value|
-          ENV[key.to_s] = value
-        end
+        Dotenv.load(file)
       end
 
       Console.logger.info(self, "env files loaded #{dot_files}")

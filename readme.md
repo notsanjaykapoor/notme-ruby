@@ -51,17 +51,10 @@ http://localhost:5000/ping
 
 ## Weather App
 
-
-Sign up for an [openweather](https://openweathermap.org) api token and configure your .env.dev.
+Sign up for an [openweather](https://openweathermap.org) api token and update .env.dev.
 
 ```
-#.env.dev
-
 OPENWEATHER_API_TOKEN="<your_token_here>"
 ```
 
-The weather app:
-
-```
-http://localhost:5000/weather
-```
+Open [http://localhost:5000/weather](http://localhost:5000/weather) in your browser.

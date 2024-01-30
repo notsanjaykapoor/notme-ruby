@@ -1,3 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env ruby
 
-RACK_ENV=tst ruby -Ilib:test test/services/**/**.rb
+for dir in ["test/app/**.rb", "test/services/*/**.rb"] do
+  system("RACK_ENV=tst ruby -Ilib:test #{dir}")
+end
