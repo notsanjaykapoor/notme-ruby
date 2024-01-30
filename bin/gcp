@@ -62,7 +62,7 @@ def deploy(ctx, host: str, user: str, site: str):
         time.sleep(DEFAULT_SSH_CHECK_INTERVAL)
         timeout += DEFAULT_SSH_CHECK_INTERVAL
 
-    _print_ok(f"ok, {code}")
+    _print_ok("ok")
 
     print(f"host {host} docker login", end=" ... ", flush=True)
 
@@ -70,9 +70,15 @@ def deploy(ctx, host: str, user: str, site: str):
 
     _print_ok("ok")
 
-    print(f"host {host} docker app pull", end=" ... ", flush=True)
+    print(f"host {host} scp", end=" ... ", flush=True)
 
-    _docker_app_pull(host=host, user=user)
+    _host_scp_files(host=host, user=user, dir="ruby", files=[".env.prd"])
+
+    _print_ok("ok")
+
+    print(f"host {host} docker image pull", end=" ... ", flush=True)
+
+    _docker_image_pull(host=host, user=user)
 
     _print_ok("ok")
 
@@ -109,20 +115,6 @@ def deploy(ctx, host: str, user: str, site: str):
     _print_ok(f"host {host} deploy completed in {time_secs} secs")
 
 
-def _docker_app_pull(host: str, user: str) -> int:
-    response = subprocess.run(
-        f"ssh -t {user}@{host} 'sudo docker image pull {GCP_REPO}:latest'",
-        shell=True,
-        capture_output=True,
-    )
-
-    if response.returncode not in [0]:
-        _print_error(response.stdout.decode("utf-8"))
-        exit(response.returncode)
-
-    return response.returncode
-
-
 def _docker_app_restart(host: str, user: str) -> int:
     response = subprocess.run(
         f"ssh -t {user}@{host} 'sudo docker stop ruby-prd'",
@@ -139,7 +131,7 @@ def _docker_app_restart(host: str, user: str) -> int:
 
 def _docker_app_start(host: str, user: str) -> int:
     response = subprocess.run(
-        f"ssh -t {user}@{host} 'sudo docker run --name ruby-prd --network notme -d --rm -p 6000:6000 {GCP_REPO}:latest /app/bin/api-server --port 6000'",
+        f"ssh -t {user}@{host} 'sudo docker run --name ruby-prd --network notme --env-file ./ruby/.env.prd -d --rm -p 6000:6000 {GCP_REPO}:latest /app/bin/api-server --port 6000'",
         shell=True,
         capture_output=True,
     )
@@ -153,7 +145,7 @@ def _docker_app_start(host: str, user: str) -> int:
 
 def _docker_build(version: str) -> int:
     response = subprocess.run(
-        f"docker build -t {GCP_REPO}:{version} -t {GCP_REPO}:latest --platform linux/amd64 --build-arg NOTME_VERSION={version} .",
+        f"docker build -t {GCP_REPO}:{version} -t {GCP_REPO}:latest --platform linux/amd64 --build-arg APP_VERSION={version} .",
         shell=True,
         capture_output=False,
     )
@@ -182,6 +174,20 @@ def _docker_build(version: str) -> int:
     return response.returncode
 
 
+def _docker_image_pull(host: str, user: str) -> int:
+    response = subprocess.run(
+        f"ssh -t {user}@{host} 'sudo docker image pull {GCP_REPO}:latest'",
+        shell=True,
+        capture_output=True,
+    )
+
+    if response.returncode not in [0]:
+        _print_error(response.stdout.decode("utf-8"))
+        exit(response.returncode)
+
+    return response.returncode
+
+
 def _docker_login(host: str, user: str) -> int:
     response = subprocess.run(
         f"ssh -t {user}@{host} 'gcloud auth print-access-token | sudo docker login -u oauth2accesstoken --password-stdin gcr.io'",
@@ -203,7 +209,33 @@ def _host_check(host: str, user: str) -> int:
         capture_output=True,
     ).returncode
 
+    if ssh_code not in [0]:
+        exit(ssh_code)
+
     return ssh_code
+
+
+def _host_scp_files(host: str, user: str, dir: str, files: list[str]) -> int:
+    scp_code = subprocess.run(
+        f"ssh -t {user}@{host} 'mkdir -p {dir}'",
+        shell=True,
+        capture_output=True,
+    ).returncode
+
+    if scp_code not in [0]:
+        exit(scp_code)
+
+    for file in files:
+        scp_code = subprocess.run(
+            f"scp {file} {user}@{host}:{dir}/{file}",
+            shell=True,
+            capture_output=True,
+        ).returncode
+
+        if scp_code != 0:
+            exit(scp_code)
+
+    return 0
 
 
 def _print_error(s: str):
