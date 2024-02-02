@@ -1,0 +1,38 @@
+
+<script>
+    const handler = Plaid.create({
+        token: "<%= @token %>",
+        onSuccess: (public_token, metadata) => {
+            console.log("plaid create success", public_token)
+        },
+        onLoad: () => {
+            console.log("plaid create load")
+        },
+        onExit: (err, metadata) => {
+            console.log("plaid create exit")
+        },
+        onEvent: (eventName, metadata) => {
+            console.log("plaid event", eventName, metadata)
+        },
+    });
+</script>
+
+
+<div class="container grid grid-cols-12">
+    <div class="col-span-12 mt-10">
+        <h3 class="font-bold text-center">
+            <%= @text %>
+        </h3>
+    </div>
+    <div class="col-start-2 col-span-10 mt-2 opacity-50 text-center text-xs text-zinc-400">
+        @<%= @app_version %>
+    </div>
+</div>
+
+<div class="container grid grid-cols-12">
+    <div class="col-span-12 mt-10">
+        <button class="px-3 py-2 font-semibold place-self-center text-xs bg-cyan-500 text-white rounded shadow-sm" onclick="handler.open()">
+            Connect
+        </button>
+    </div>
+</div>

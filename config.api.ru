@@ -132,6 +132,7 @@ class App < Roda
       view("me", layout: "layouts/me")
     end
 
+    # finance app
     r.on "finance" do
       symbols_session = Set.new((r.session["symbols"] || "").split(",").map{ |s| s.strip.upcase })
       symbols_expire_session = (r.session["symbols_expire"] || Time.now.utc.to_i + (60 * 3)).to_i
@@ -205,6 +206,19 @@ class App < Roda
       end
     end
 
+    # finance app
+    r.on "plaid" do
+      r.get "connect" do
+        struct = ::Service::Plaid::Tokens::LinkCreate.new(client_name: "notme", user_id: "sanjay").call
+
+        @text = "Plaid Sandbox"
+        @token = struct.token
+
+        view("plaid/connect", layout: "layouts/plaid")
+      end
+    end
+
+    # weather app
     r.on "weather" do
       r.post "add" do # post /weather/add
         if ::Model::City.count() >= @city_max
