@@ -94,7 +94,7 @@ module Service
         end
 
         # render template and send to client
-        template = ::Tilt::ERBTemplate.new("./views/finance/table_ws.erb")
+        template = ::Tilt::ERBTemplate.new("./views/ticker/table_ws.erb")
         output = template.render(Hash, {stocks: struct_price.data})
 
         @conn.write(output)
@@ -105,7 +105,7 @@ module Service
 
       def _watch_status_render(status:)
         # render template and send to client
-        template = ::Tilt::ERBTemplate.new("./views/finance/expired_ws.erb")
+        template = ::Tilt::ERBTemplate.new("./views/ticker/expired_ws.erb")
         output = template.render(Hash, {status: "expired"})
 
         @conn.write(output)

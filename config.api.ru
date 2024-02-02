@@ -132,34 +132,46 @@ class App < Roda
       view("me", layout: "layouts/me")
     end
 
-    # finance app
-    r.on "finance" do
+    # plaid connect
+    r.on "plaid" do
+      r.get "connect" do
+        struct = ::Service::Plaid::Tokens::LinkCreate.new(client_name: "notme", user_id: "sanjay").call
+
+        @text = "Plaid Sandbox"
+        @token = struct.token
+
+        view("plaid/connect", layout: "layouts/plaid")
+      end
+    end
+
+    # ticker app
+    r.on "ticker" do
       symbols_session = Set.new((r.session["symbols"] || "").split(",").map{ |s| s.strip.upcase })
       symbols_expire_session = (r.session["symbols_expire"] || Time.now.utc.to_i + (60 * 3)).to_i
 
-      r.get "reset" do # get /finance/reset
+      r.get "reset" do # get /ticker/reset
         r.session.delete("symbols_expire")
 
-        r.redirect("/finance")
+        r.redirect("/ticker")
       end
 
-      r.get do # get /finance
+      r.get do # get /ticker
         @symbols = (r.params["q"] || "").split(",").map{ |s| s.strip.upcase }.sort
         @stocks = {}
-        @text = "Finance"
+        @text = "Ticker"
         @expires_unix = symbols_expire_session
 
         if @symbols.size > @stock_max
-          r.redirect "/finance"
+          r.redirect "/ticker"
         end
 
         r.session["symbols"] = @symbols.join(",")
         r.session["symbols_expire"] = @expires_unix
 
-        view("finance/index")
+        view("ticker/index", layout: "layouts/app")
       end
 
-      r.post "add" do # post /finance/add
+      r.post "add" do # post /ticker/add
         add = Set.new([(r.params["q"] || "").upcase])
 
         if symbols_session.size < @stock_max
@@ -180,15 +192,15 @@ class App < Roda
         r.session["symbols"] = @symbols.join(",")
 
         # update browser history
-        response.headers["HX-Push-Url"] = "/finance?q=#{@symbols.map{ |s| s.downcase }.join(",")}"
+        response.headers["HX-Push-Url"] = "/ticker?q=#{@symbols.map{ |s| s.downcase }.join(",")}"
 
         # trigger event
         response.headers["HX-Trigger"] = "watch-changed"
 
-        render("finance/symbols")
+        render("ticker/symbols")
       end
 
-      r.put "del" do # get /finance/del
+      r.put "del" do # get /ticker/del
         del = Set.new([(r.params["q"] || "").upcase])
         @symbols = symbols_session - del
         @symbols = @symbols.sort
@@ -197,24 +209,12 @@ class App < Roda
         r.session["symbols"] = @symbols.join(",")
 
         # update browser history
-        response.headers["HX-Push-Url"] = "/finance?q=#{@symbols.map{ |s| s.downcase }.join(",")}"
+        response.headers["HX-Push-Url"] = "/ticker?q=#{@symbols.map{ |s| s.downcase }.join(",")}"
 
         # trigger event
         response.headers["HX-Trigger"] = "watch-changed"
 
-        render("finance/symbols")
-      end
-    end
-
-    # finance app
-    r.on "plaid" do
-      r.get "connect" do
-        struct = ::Service::Plaid::Tokens::LinkCreate.new(client_name: "notme", user_id: "sanjay").call
-
-        @text = "Plaid Sandbox"
-        @token = struct.token
-
-        view("plaid/connect", layout: "layouts/plaid")
+        render("ticker/symbols")
       end
     end
 
@@ -296,7 +296,7 @@ class App < Roda
         @cities_filtered = 0
         @text = "Weather"
 
-        view("weather/list")
+        view("weather/list", layout: "layouts/app")
       end
 
       r.delete Integer do |id| # delete weather/:id
@@ -308,7 +308,7 @@ class App < Roda
           response.headers["HX-Trigger"] = "weatherCountChanged"
         end
 
-        view("weather/delete")
+        view("weather/delete", layout: "layouts/app")
       end
 
       r.post "refresh" do # post /weather/refresh
