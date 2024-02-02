@@ -1,6 +1,7 @@
 require "async"
 require "async/websocket/adapters/rack"
 require "logger"
+require "protocol/websocket/json_message"
 
 # boot app
 
@@ -10,28 +11,27 @@ app = lambda do |env|
   Async::WebSocket::Adapters::Rack.open(env, protocols: ["ws"]) do |connection|
     Console.logger.info("WebSocket", "connected")
 
-    # create terminal queues
+    queue = ::Async::Queue.new
 
-    input_queue = ::Async::Queue.new
-    output_queue = ::Async::Queue.new
-
-    ::Services::Ws::Parse.new(
-      input_queue: input_queue,
-      output_queue: output_queue,
-    ).call
-
-    Async do
-      # read message and send to terminal
-      while message = connection.read
-        input_queue.enqueue(message)
-      end
+    watch_task = Async do
+      ::Service::Stock::Watch.new(
+        conn: connection,
+        queue: queue,
+        expires_unix: Time.now.utc.to_i + 120, # default expires in 2 mins
+      ).call
     end
 
-    # block on terminal output and send via websocket
-    while message = output_queue.dequeue
-      connection.write(message)
-      connection.flush
+    # read socket messages and add to queue
+    while message = connection.read
+      queue.enqueue(message)
     end
+  rescue Protocol::WebSocket::ClosedError => e
+    Console.logger.info("WebSocket", "socket closed")
+  rescue StandardError => e
+    Console.logger.info("WebSocket", "exception #{e}")
+  ensure
+    Console.logger.info("WebSocket", "cleanup")
+    watch_task&.stop
   end
 end
 

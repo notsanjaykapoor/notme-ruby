@@ -1,0 +1,9 @@
+<tbody hx-swap-oob="afterbegin:#stock-data">
+    <% stocks.each do |symbol, o| %>
+        <tr class="group hover:bg-zinc-50 odd:bg-white even:bg-slate-50 text-sm">
+            <td class="p-4 pr-6 font-normal text-center text-zinc-800"><%= symbol %></td>
+            <td class="p-4 pr-6 font-normal text-center text-zinc-800"><%= o.dig('price') %></td>
+            <td class="p-4 pr-6 font-normal text-center text-zinc-400"><%= Time.now.utc %></td>
+        </tr>
+    <% end %>
+</tbody>

@@ -1,0 +1,8 @@
+<% for symbol in @symbols do %>
+    <button class="px-3 py-2 font-semibold text-xs bg-cyan-500 text-white rounded-l-lg shadow-sm">
+        <%= symbol %>
+    </button>
+    <button class="mr-3 px-3 py-2 font-semibold text-xs bg-zinc-700 text-white rounded-r-lg shadow-sm" hx-put="/finance/del?q=<%= symbol %>" hx-target="#symbols-list" hx-trigger="click">
+        x
+    </button>
+<% end %>

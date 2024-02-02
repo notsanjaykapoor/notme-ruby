@@ -1,0 +1,52 @@
+<div class="container grid grid-cols-12">
+  <div class="col-span-12 mt-10">
+    <h3 class="font-bold text-center">
+      <%= @text %>
+    </h3>
+  </div>
+  <div class="col-start-2 col-span-10 mt-2 opacity-50 text-center text-xs text-zinc-400" id="ws-status">
+    ws:
+  </div>
+  <div class="col-start-2 col-span-10 mt-2 opacity-50 text-center text-xs text-zinc-400">
+    @<%= @app_version %>
+  </div>
+</div>
+
+<div class="container grid grid-cols-12 mt-10">
+  <div class="col-start-2 col-span-8 mt-5" id="symbols-list">
+    <%= render "finance/symbols" %>
+  </div>
+  <div class="col-start-10 col-span-2 font-normal text-sm">
+    <input type="search" name="q" placeholder="symbol lookup" autocomplete="off" hx-on:htmx:after-request="this.value = ''" hx-post="/finance/add" hx-target="#symbols-list" class="peer px-0 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans text-sm font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-indigo-500 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50">
+  </div>
+</div>
+
+<div class="container grid grid-cols-12 mt-10" id="stocks-table">
+  <div class="col-start-2 col-span-10 mt-2  opacity-50 text-center text-xs text-zinc-400" id="watch-status">
+    active
+  </div>
+<%= render "finance/table" %>
+</div>
+
+<script>
+  document.body.addEventListener('htmx:wsOpen', function(event) {
+    document.getElementById("ws-status").innerHTML = "ws: connected"
+    params = new URLSearchParams(window.location.search)
+    sub_msg = {"topic": "finance:watch:htmx", "data": params.get("q"), "expires_unix": <%= @expires_unix or 0 %>}
+    console.log("ws open ... subscribe", sub_msg)
+    event.detail.socketWrapper.send(JSON.stringify(sub_msg))
+  });
+
+  document.body.addEventListener('htmx:wsClose', function(event) {
+    document.getElementById("ws-status").innerHTML = "ws: closed"
+  });
+
+  document.body.addEventListener('htmx:wsError', function(event) {
+    document.getElementById("ws-status").innerHTML = "ws: error"
+  });
+</script>
+
+<div hx-ext="ws" ws-connect="<%= @app_ws_uri %>">
+  <div hx-ws="send" hx-trigger="watch-changed from:body delay:1s"/>
+</div>
+

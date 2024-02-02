@@ -52,7 +52,7 @@ def build(ctx, sha: str):
 def deploy(ctx, host: str, user: str, site: str):
     time_start_unix = time.time()
 
-    print(f"host {host} check", end=" ... ", flush=True)
+    print(f"host {host} ping", end=" ... ", flush=True)
 
     timeout = 0
     while timeout < DEFAULT_SSH_CHECK_TIMEOUT:
@@ -70,7 +70,7 @@ def deploy(ctx, host: str, user: str, site: str):
 
     _print_ok("ok")
 
-    print(f"host {host} scp", end=" ... ", flush=True)
+    print(f"host {host} scp files", end=" ... ", flush=True)
 
     _host_scp_files(host=host, user=user, dir="ruby", files=[".env.prd"])
 
@@ -79,6 +79,12 @@ def deploy(ctx, host: str, user: str, site: str):
     print(f"host {host} docker image pull", end=" ... ", flush=True)
 
     _docker_image_pull(host=host, user=user)
+
+    _print_ok("ok")
+
+    print(f"host {host} docker app db migrate", end=" ... ", flush=True)
+
+    _docker_app_db_migrate(host=host, user=user)
 
     _print_ok("ok")
 
@@ -115,23 +121,52 @@ def deploy(ctx, host: str, user: str, site: str):
     _print_ok(f"host {host} deploy completed in {time_secs} secs")
 
 
-def _docker_app_restart(host: str, user: str) -> int:
+def _docker_app_db_migrate(host: str, user: str) -> int:
     response = subprocess.run(
-        f"ssh -t {user}@{host} 'sudo docker stop ruby-prd'",
+        f"ssh -t {user}@{host} 'sudo docker run --name ruby-migrate-prd --network notme --rm --env-file ./ruby/.env.prd {GCP_REPO}:latest /app/bin/db-migrate'",
         shell=True,
         capture_output=True,
     )
 
-    if response.returncode not in [0, 1]: # 1 means container not running
+    if response.returncode not in [0]:
         _print_error(response.stdout.decode("utf-8"))
         exit(response.returncode)
+
+    return response.returncode
+
+
+def _docker_app_restart(host: str, user: str) -> int:
+    apps = ["ruby-migrate-prd", "ruby-prd", "ruby-ws-prd"]
+
+    for app in apps:
+        response = subprocess.run(
+            f"ssh -t {user}@{host} 'sudo docker stop {app}'",
+            shell=True,
+            capture_output=True,
+        )
+
+        if response.returncode not in [0, 1]: # 1 means container not running
+            _print_error(response.stdout.decode("utf-8"))
+            exit(response.returncode)
 
     return _docker_app_start(host=host, user=user)
 
 
 def _docker_app_start(host: str, user: str) -> int:
+    # api server
     response = subprocess.run(
         f"ssh -t {user}@{host} 'sudo docker run --name ruby-prd --network notme --env-file ./ruby/.env.prd -d --rm -p 6000:6000 {GCP_REPO}:latest /app/bin/api-server --port 6000'",
+        shell=True,
+        capture_output=True,
+    )
+
+    if response.returncode != 0:
+        _print_error(response.stdout.decode("utf-8"))
+        exit(response.returncode)
+
+    # ws server
+    response = subprocess.run(
+        f"ssh -t {user}@{host} 'sudo docker run --name ruby-ws-prd --network notme --env-file ./ruby/.env.prd -d --rm -p 6666:6666 {GCP_REPO}:latest /app/bin/ws-server --port 6666'",
         shell=True,
         capture_output=True,
     )

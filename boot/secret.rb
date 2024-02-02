@@ -16,7 +16,7 @@ module Boot
         Dotenv.load(file)
       end
 
-      Console.logger.info(self, "env files loaded #{dot_files}")
+      Console.logger.info(self, "env files #{dot_files}")
 
       struct
     end

@@ -2,7 +2,6 @@
 
 require "async"
 require "sequel"
-require "toml-rb"
 
 require "./boot/secret.rb"
 

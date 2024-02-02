@@ -4,7 +4,8 @@ require "./boot.rb"
 
 require "rack/cors"
 
-CITY_MAX_COUNT_DEFAULT = 2**10
+APP_CITY_MAX_DEFAULT = 2**10
+APP_STOCK_MAX_DEFAULT = 5
 
 use Rack::Cors do
   allow do
@@ -20,6 +21,7 @@ class App < Roda
   plugin :json_parser, parser: ::Oj.method(:load)
   plugin :request_headers
   plugin :render
+  plugin :sessions, secret: ENV["APP_SECRET"]
 
   before do
     env[:start] = ::Async::Clock.now
@@ -38,8 +40,10 @@ class App < Roda
   end
 
   route do |r|
-    city_max_count = (ENV["APP_CITY_MAX_COUNT"] || CITY_MAX_COUNT_DEFAULT).to_i
-    version = ENV["APP_VERSION"] || ENV["RACK_ENV"]
+    @city_max = (ENV["APP_CITY_MAX"] || APP_CITY_MAX_DEFAULT).to_i
+    @stock_max = (ENV["APP_STOCK_MAX"] || APP_STOCK_MAX_DEFAULT).to_i
+    @app_version = ENV["APP_VERSION"] || ENV["RACK_ENV"]
+    @app_ws_uri = ENV["APP_WS_URI"]
 
     r.post "graphql" do
       env[:api_name] = "gql"
@@ -88,10 +92,11 @@ class App < Roda
       env[:api_name] = "version"
 
       {
-        "version": version
+        "version": @app_version
       }
     end
 
+    # api
     r.on "api/v1" do
       r.on "auth" do
         r.post "pki" do # POST /api/v1/auth/pki
@@ -124,13 +129,85 @@ class App < Roda
     end
 
     r.get "me" do # GET /me
-      @version = "dev"
-      view("me")
+      view("me", layout: "layouts/me")
+    end
+
+    r.on "finance" do
+      symbols_session = Set.new((r.session["symbols"] || "").split(",").map{ |s| s.strip.upcase })
+      symbols_expire_session = (r.session["symbols_expire"] || Time.now.utc.to_i + (60 * 3)).to_i
+
+      r.get "reset" do # get /finance/reset
+        r.session.delete("symbols_expire")
+
+        r.redirect("/finance")
+      end
+
+      r.get do # get /finance
+        @symbols = (r.params["q"] || "").split(",").map{ |s| s.strip.upcase }.sort
+        @stocks = {}
+        @text = "Finance"
+        @expires_unix = symbols_expire_session
+
+        if @symbols.size > @stock_max
+          r.redirect "/finance"
+        end
+
+        r.session["symbols"] = @symbols.join(",")
+        r.session["symbols_expire"] = @expires_unix
+
+        view("finance/index")
+      end
+
+      r.post "add" do # post /finance/add
+        add = Set.new([(r.params["q"] || "").upcase])
+
+        if symbols_session.size < @stock_max
+          # validate symbol
+          code = ::Service::Stock::Verify.new(symbol: add.first).call
+
+          if code != 0
+            r.halt(404)
+          end
+
+          symbols_session = symbols_session + add
+          symbols_session = symbols_session.sort
+        end
+
+        @symbols = symbols_session
+
+        # update session
+        r.session["symbols"] = @symbols.join(",")
+
+        # update browser history
+        response.headers["HX-Push-Url"] = "/finance?q=#{@symbols.map{ |s| s.downcase }.join(",")}"
+
+        # trigger event
+        response.headers["HX-Trigger"] = "watch-changed"
+
+        render("finance/symbols")
+      end
+
+      r.put "del" do # get /finance/del
+        del = Set.new([(r.params["q"] || "").upcase])
+        @symbols = symbols_session - del
+        @symbols = @symbols.sort
+
+        # update session
+        r.session["symbols"] = @symbols.join(",")
+
+        # update browser history
+        response.headers["HX-Push-Url"] = "/finance?q=#{@symbols.map{ |s| s.downcase }.join(",")}"
+
+        # trigger event
+        response.headers["HX-Trigger"] = "watch-changed"
+
+        render("finance/symbols")
+      end
     end
 
     r.on "weather" do
       r.post "add" do # post /weather/add
-        if ::Model::City.count() >= city_max_count
+        if ::Model::City.count() >= @city_max
           r.halt(422)
         end
 
@@ -160,7 +237,7 @@ class App < Roda
         @cities_filtered = 0
 
         # render without layout
-        render("weather_table")
+        render("weather/table")
       end
 
       r.post "search" do # post /weather/search
@@ -183,14 +260,14 @@ class App < Roda
         end
 
         # render without layout
-        render("weather_table")
+        render("weather/table")
       end
 
       r.get "count" do # get /weather/count
         @cities_count = ::Model::City.count()
 
         # render without layout
-        render("weather_count")
+        render("weather/count")
       end
 
       r.get do # get /weather
@@ -204,9 +281,8 @@ class App < Roda
         @cities_count = @cities.length
         @cities_filtered = 0
         @text = "Weather"
-        @version = version
 
-        view("weather_list")
+        view("weather/list")
       end
 
       r.delete Integer do |id| # delete weather/:id
@@ -218,7 +294,7 @@ class App < Roda
           response.headers["HX-Trigger"] = "weatherCountChanged"
         end
 
-        view("weather_delete")
+        view("weather/delete")
       end
 
       r.post "refresh" do # post /weather/refresh
@@ -233,7 +309,7 @@ class App < Roda
         @cities_filtered = 0
 
         # render without layout
-        render("weather_table")
+        render("weather/table")
       end
 
       r.post Integer do |id| # post weather/:id
@@ -267,7 +343,7 @@ class App < Roda
         @cities_filtered = 0
 
         # render without layout
-        render("weather_table")
+        render("weather/table")
       end
     end
   end
