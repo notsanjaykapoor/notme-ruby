@@ -1,5 +1,3 @@
-## Intro
-
 A Ruby app built using [Roda](https://github.com/jeremyevans/roda), [Async](https://github.com/socketry/async), [Sequel](https://github.com/jeremyevans/sequel), and [Falcon](https://github.com/socketry/falcon).
 
 The api server supports both rest and graphql endpoints.  The websockets server supports a simple terminal interface.
@@ -40,12 +38,6 @@ Start server on a port of your choice:
 
 ```
 ./bin/api-server --port 5000
-```
-
-The app should now be accessible:
-
-```
-http://localhost:5000/ping
 ```
 
 
