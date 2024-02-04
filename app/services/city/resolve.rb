@@ -19,20 +19,26 @@ module Service
 
         if @name == ""
           struct.code = 404
-
-          struct
+          return struct
         end
 
-        struct_list = ::Service::City::Search.new(query: "name:~#{@name}", offset: 0, limit: 5).call
+        search_result = ::Service::City::Search.new(query: "name:~#{@name}", offset: 0, limit: 5).call
 
-        if struct_list.cities.length == 0
+        if search_result.cities.length > 0
+          struct.city = search_result.cities[0]
+          return struct
+        end
+
+        # geocode city
+        geocode_result = Geocoder.search(@name)
+
+        if geocode_result.length == 0
           struct.code = 404
-
           struct
         end
 
-        city_id = struct_list.cities[0].dig(:id)
-        struct.city = ::Model::City.first(id: city_id)
+        update_result = ::Service::City::Update.new(data: geocode_result[0].data).call
+        struct.city = update_result.city
 
         struct
       end

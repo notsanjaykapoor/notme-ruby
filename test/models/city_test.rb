@@ -7,15 +7,15 @@ class CityTest < Minitest::Test
   end
 
   def test_name_unique
-    city_1 = ::Model::City.create(data: {}, name: "Chicago", lat: 42.35, lon: -71.05, temp: 30.00)
+    city_1 = ::Model::City.create(data: {}, name: "Chicago", lat: 42.35, lon: -71.05)
     assert city_1.id
     assert city_1.name == "Chicago"
 
     assert_raises Sequel::ValidationFailed do
-      ::Model::City.create(data: {}, name: "Chicago", lat: 42.35, lon: -71.05, temp: 30.00)
+      ::Model::City.create(data: {}, name: "Chicago", lat: 42.35, lon: -71.05)
     end
 
-    city_2 = ::Model::City.create(data: {}, name: "Boston", lat: 42.35, lon: -71.05, temp: 30.00)
+    city_2 = ::Model::City.create(data: {}, name: "Boston", lat: 42.35, lon: -71.05)
     assert city_2.id
   end
 

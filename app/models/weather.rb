@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
 module Model
-  class City < ::Sequel::Model
+  class Weather < ::Sequel::Model(:weather)
     plugin :dirty
     plugin :validation_helpers
 
     def validate
       super
-      validates_presence [:lat, :lon, :name]
+      validates_presence [:lat, :lon, :name, :temp]
       validates_unique [:name]
     end
 
@@ -31,6 +31,18 @@ module Model
       def tagged_with_any(list)
         where(Sequel.pg_array(:tags).overlaps(Array(list)))
       end
+
+      def temp_gte(s)
+        where(Sequel.lit("temp >= ?", s.to_f))
+      end
+
+      def temp_lte(s)
+        where(Sequel.lit("temp <= ?", s.to_f))
+      end
+    end
+
+    def feels_like
+      data.dig("main", "feels_like")
     end
 
     def tags
@@ -41,8 +53,21 @@ module Model
       super(TagList.new.normalize(tags: list))
     end
 
+    def temp_max
+      data.dig("main", "temp_max")
+    end
+
+    def temp_min
+      data.dig("main", "temp_min")
+    end
+
     def updated_at_unix
       updated_at.to_i
     end
+
+    def weather
+      data.dig("weather", 0, "description").to_s
+    end
+
   end
 end

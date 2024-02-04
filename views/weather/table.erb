@@ -13,14 +13,14 @@
     </tr>
   </thead>
   <tbody id="weather-data">
-    <% @cities.each do |city| %>
+    <% @weather_list.each do |weather| %>
       <tr class="group hover:bg-zinc-50 odd:bg-white even:bg-slate-50 text-sm">
-        <% seconds_ago = city.dig(:seconds_ago) %>
+        <% seconds_ago = weather.dig(:seconds_ago) %>
         <% seconds_alert = seconds_ago < 60 ? 'bg-yellow-400' : '' %>
 
-        <td class="p-4 pr-6 font-normal <%= seconds_alert %>"><%= city.dig(:name) %></td>
-        <td class="p-4 pr-6 font-normal <%= seconds_alert %>"><%= city.dig(:temp) %></td>
-        <td class="p-4 pr-6 font-normal <%= seconds_alert %>"><%= city.dig(:feels_like) %></td>
+        <td class="p-4 pr-6 font-normal <%= seconds_alert %>"><%= weather.dig(:name) %></td>
+        <td class="p-4 pr-6 font-normal <%= seconds_alert %>"><%= weather.dig(:temp) %></td>
+        <td class="p-4 pr-6 font-normal <%= seconds_alert %>"><%= weather.dig(:feels_like) %></td>
         <td class="p-4 pr-6 font-normal text-xs <%= seconds_alert %>">
           <% if seconds_ago < 60 %>
             just now
@@ -29,13 +29,13 @@
           <% elsif seconds_ago < (60 * 60 * 12) %>
             <%= seconds_ago / (60 * 60) %> hours ago
           <% else %>
-            <a class="cursor-pointer hover:underline text-blue-800 font-semibold" hx-post=<%= "/weather/#{city.dig(:id)}" %> hx-target="#weather-table">
+            <a class="cursor-pointer hover:underline text-blue-800 font-semibold" hx-post=<%= "/weather/#{weather.dig(:id)}" %> hx-target="#weather-table">
               <%= seconds_ago / (60 * 60) %> hours ago
             </a>
           <% end %>
         </td>
         <td class="p-4 pr-6 font-normal text-sm <%= seconds_alert %>">
-          <a class="cursor-pointer hover:underline text-orange-500 font-semibold p-1 text-xs" hx-delete=<%= "/weather/#{city.dig(:id)}" %> hx-target="closest tr" hx-swap="outerHTML swap:1s">
+          <a class="cursor-pointer hover:underline text-orange-500 font-semibold p-1 text-xs" hx-delete=<%= "/weather/#{weather.dig(:id)}" %> hx-target="closest tr" hx-swap="outerHTML swap:1s">
             x
           </a>
         </td>
@@ -44,6 +44,6 @@
   </tbody>
 </table>
 
-<% if @cities_filtered == 0 %>
+<% if @weather_filtered == 0 %>
   <span hx-post="/weather/refresh" hx-target="#weather-table" hx-trigger="every 60s"/>
 <% end %>

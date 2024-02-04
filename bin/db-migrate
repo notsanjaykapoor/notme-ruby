@@ -43,12 +43,21 @@ migrate_version = options[:version]
 
 Sequel.connect(url_root) do |db|
     begin
-        db.execute "CREATE DATABASE #{db_name};"
+        db.execute "create database #{db_name};"
     rescue Sequel::DatabaseError
         Console.logger.info("Boot::Migrate", "#{db_name} exists")
     else
         Console.logger.info("Boot::Migrate", "#{db_name} created")
     end
+end
+
+Sequel.connect(url) do |db|
+    begin
+        version = db[:schema_info].first.dig(:version)
+    rescue Exception
+        version = 0
+    end
+    Console.logger.info("Boot::Migrate", "#{db_name} version #{version}")
 end
 
 if migrate_mode == "up"
@@ -59,3 +68,8 @@ else
     system("sequel -m db/migrations #{url} -M #{migrate_version}")
 end
 
+Sequel.connect(url) do |db|
+    # schema_info must exist
+    version = db[:schema_info].first.dig(:version)
+    Console.logger.info("Boot::Migrate", "#{db_name} version #{version}")
+end

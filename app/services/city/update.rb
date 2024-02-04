@@ -4,15 +4,15 @@ module Service
   module City
     class Update
 
-      def initialize(object:)
-        @object = object
-        @name = @object.dig("name")
+      def initialize(data:)
+        @data = data
+        @name = @data.dig("name")
 
-        @struct = Struct.new(:code, :city_id, :temp, :errors)
+        @struct = Struct.new(:code, :city, :errors)
       end
 
       def call
-        struct = @struct.new(0, nil, 0.0, [])
+        struct = @struct.new(0, nil, [])
 
         Console.logger.info(self, "#{Thread.current[:rid]} city '#{@name}'")
 
@@ -22,31 +22,24 @@ module Service
           if city.blank?
             # create city
             create_params = {
-              country: @object["sys"]["country"],
+              bbox: @data.dig("boundingbox") || [],
+              country_code: @data["address"]["country_code"].to_s.upcase,
+              lat: @data["lat"].to_f,
+              lon: @data["lon"].to_f,
               name: @name,
-              temp: @object["main"]["temp"],
-            }.merge(@object["coord"]) # lat, lon
+            }
 
             city = ::Model::City.create(create_params)
           end
 
           # update city weather data
 
-          data = {
-            main: @object["main"],
-            sys: @object["sys"],
-            timezone: @object["timezone"],
-            weather: @object["weather"],
-          }
-
           city.update(
-            data: data,
-            temp: @object["main"]["temp"],
+            data: @data,
             updated_at: Time.now.utc,
           )
 
-          struct.city_id = city.id
-          struct.temp = @object["main"]["temp"]
+          struct.city = city
         rescue => e
           struct.code = 500
           struct.errors.push(e.message)

@@ -6,7 +6,7 @@ class PlacesCreateTest < Minitest::Test
     ::Model::Place.truncate
   end
 
-  def test_create
+  def test_create_with_valid_feature
     geo_json = {
       "type"=>"FeatureCollection",
       "features" => [
@@ -62,6 +62,41 @@ class PlacesCreateTest < Minitest::Test
     assert place.lon == -87.631073
     assert place.source_id == "dXJuOm1ieHBvaTo0NWZiZWE3Yi1hYTI3LTQ0NmItOTJlOC03MTlhYjliYmVhMTc"
     assert place.source_name = "mapbox"
+    assert place.tags == ["drinks", "food"]
+  end
+
+  def test_create_with_invalid_type
+    geo_json = {
+      "type"=>"FeatureCollection",
+      "features" => [
+        {
+          "type" => "Invalid",
+        }
+      ]
+    }
+
+    struct = ::Service::Places::Create.new(
+      geo_json: geo_json,
+    ).call
+
+    assert struct.code == 422
+    assert struct.places.length == 0
+
+    geo_json = {
+      "type"=>"InvalidCollection",
+      "features" => [
+        {
+          "type" => "Feature",
+        }
+      ]
+    }
+
+    struct = ::Service::Places::Create.new(
+      geo_json: geo_json,
+    ).call
+
+    assert struct.code == 422
+    assert struct.places.length == 0
   end
 
 end

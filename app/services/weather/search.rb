@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Service
-  module City
+  module Weather
     class Search
 
       def initialize(query:, offset:, limit:)
@@ -9,7 +9,7 @@ module Service
         @offset = offset
         @limit = limit
 
-        @struct = Struct.new(:code, :cities, :errors)
+        @struct = Struct.new(:code, :objects, :errors)
       end
 
       def call
@@ -23,7 +23,7 @@ module Service
           ).call
 
           tokens = struct_tokens.tokens
-          query = ::Model::City
+          query = ::Model::Weather
 
           tokens.each do |object|
             field = object[:field]
@@ -48,7 +48,23 @@ module Service
 
           query = query.order(Sequel.asc(:name)).offset(@offset).limit(@limit)
 
-          struct.cities = query.select(:bbox, :id, :lat, :lon, :name).all
+          struct.objects = query.map do |object|
+            {
+              feels_like: object.feels_like,
+              id: object.id,
+              lat: object.lat,
+              lon: object.lon,
+              name: object.name,
+              region: object.region,
+              seconds_ago: Time.now.utc.to_i - object.updated_at_unix,
+              tags: object.tags,
+              temp: object.temp,
+              temp_max: object.temp_max,
+              temp_min: object.temp_min,
+              updated_at_unix: object.updated_at_unix,
+              weather: object.weather,
+            }
+          end
         rescue => e
           struct.code = 500
           struct.errors.push(e.message)

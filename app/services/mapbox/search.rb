@@ -8,13 +8,13 @@ module Service
   module Mapbox
     class Search
 
-      def initialize(city:, query:)
+      def initialize(city:, query:, limit: 10)
         @city = city
         @query = CGI.escape(query)
 
         @token = ENV["MAPBOX_TOKEN"]
         @endpoint = "https://api.mapbox.com/search/searchbox/v1/suggest"
-        @limit = 10
+        @limit = [limit, 10].min  # mapbox limit is 10
         @session_token = ULID.generate()
         @proximity = "#{city.lon},#{city.lat}"
         @http = ::Service::Mapbox::Http.instance

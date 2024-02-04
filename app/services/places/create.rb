@@ -16,11 +16,19 @@ module Service
         struct = @struct.new(0, [], [])
 
         if @type == "FeatureCollection"
-          struct.places = @geo_json.dig("features").map { |feature| _feature_parse(feature: feature)}
+          places = @geo_json.dig("features").map { |feature| _feature_parse(feature: feature)}
 
-          for place in struct.places
+          for place in places
+            if not place
+              struct.code = 422
+              return struct
+            end
+
             place.save
+            struct.places.append(place)
           end
+        else
+          struct.code = 422
         end
 
         struct
@@ -28,6 +36,10 @@ module Service
 
       def _feature_parse(feature:)
         # assert feature.dig("type") == "Feature"
+
+        if feature.dig("type") != "Feature"
+          return nil
+        end
 
         props = feature.dig("properties")
 
@@ -37,6 +49,7 @@ module Service
         lon = props.dig("coordinates").dig("longitude")
         mapbox_id = props.dig("mapbox_id")
         name = props.dig("name")
+        tags = _feature_parse_tags(categories: props.dig("poi_category") || [])
 
         ::Model::Place.new(
           city: city,
@@ -48,9 +61,25 @@ module Service
           name: name,
           source_id: mapbox_id,
           source_name: "mapbox",
-          tags: [],
+          tags: tags,
           updated_at: Time.now.utc,
         )
+      end
+
+      def _feature_parse_tags(categories:)
+        tags = Set[]
+
+        for s in categories
+          s_ = s.downcase
+          if s_.include?("food")
+            tags.add("food")
+          end
+          if s_.include?("bar") or s_.include?("drink")
+            tags.add("drinks")
+          end
+        end
+
+        tags.to_a.sort
       end
 
     end

@@ -4,7 +4,7 @@ require "./boot.rb"
 
 require "rack/cors"
 
-APP_CITY_MAX_DEFAULT ||= 2**10
+APP_WEATHER_MAX_DEFAULT ||= 2**10
 APP_STOCK_MAX_DEFAULT ||= 5.freeze
 
 use Rack::Cors do
@@ -40,7 +40,7 @@ class App < Roda
   end
 
   route do |r|
-    @city_max = (ENV["APP_CITY_MAX"] || APP_CITY_MAX_DEFAULT).to_i
+    @weather_max = (ENV["APP_WEATHER_MAX"] || APP_WEATHER_MAX_DEFAULT).to_i
     @mapbox_token = ENV["MAPBOX_TOKEN"]
     @stock_max = (ENV["APP_STOCK_MAX"] || APP_STOCK_MAX_DEFAULT).to_i
     @app_version = ENV["APP_VERSION"] || ENV["RACK_ENV"]
@@ -158,8 +158,7 @@ class App < Roda
         @city_name = city.name
         @city_lat = city.lat
         @city_lon = city.lon
-
-        @bbox_lon_min, @bbox_lat_min, @bbox_lon_max, @bbox_lat_max = ::Service::City::Geo.bounding_box(city: city, radius: 3)
+        @bbox_lat_min, @bbox_lat_max, @bbox_lon_min, @bbox_lon_max = city.bbox
 
         # update browser history
         response.headers["HX-Push-Url"] = "/map?city=#{@city_name}"
@@ -170,14 +169,13 @@ class App < Roda
       r.get do # GET /map?city=Chicago
         city_name = r.params["city"] || ""
 
-        struct_resolve = ::Service::City::Resolve.new(name: city_name, offset: 0, limit: 5).call
+        resolve_result = ::Service::City::Resolve.new(name: city_name, offset: 0, limit: 5).call
 
-        if (city = struct_resolve.city)
+        if (city = resolve_result.city)
           @city_name = city.name
           @city_lat = city.lat
           @city_lon = city.lon
-
-          @bbox_lon_min, @bbox_lat_min, @bbox_lon_max, @bbox_lat_max = ::Service::City::Geo.bounding_box(city: city, radius: 3)
+          @bbox_lat_min, @bbox_lat_max, @bbox_lon_min, @bbox_lon_max = city.bbox
         end
 
         view("map/city/show", layout: "layouts/app")
@@ -273,7 +271,7 @@ class App < Roda
     # weather app
     r.on "weather" do
       r.post "add" do # POST /weather/add
-        if ::Model::City.count() >= @city_max
+        if ::Model::Weather.count() >= @weather_max
           r.halt(422)
         end
 
@@ -286,21 +284,21 @@ class App < Roda
         ).call
 
         if struct_get.code == 0
-          # update city with weather data
-          ::Service::City::Update.new(
+          # update weather data
+          _update_result = ::Service::Weather::Update.new(
             object: struct_get.data
           ).call
         end
 
-        struct_list = ::Service::City::Search.new(
+        struct_list = ::Service::Weather::Search.new(
           query: "",
           offset: 0,
           limit: 50,
         ).call
 
-        @cities = struct_list.cities
-        @cities_count = @cities.length
-        @cities_filtered = 0
+        @weather_list = struct_list.objects
+        @weather_count = @weather_list.length
+        @weather_filtered = 0
 
         # render without layout
         render("weather/table")
@@ -310,19 +308,19 @@ class App < Roda
         query_raw = r.params["q"]
         query = "name:~#{query_raw}"
 
-        struct_list = ::Service::City::Search.new(
+        struct_list = ::Service::Weather::Search.new(
           query: query,
           offset: 0,
           limit: 50,
         ).call
 
-        @cities = struct_list.cities
-        @cities_count = @cities.length
+        @weather_list = struct_list.objects
+        @weather_count = @weather_list.length
 
         if query_raw != ""
-          @cities_filtered = 1
+          @weather_filtered = 1
         else
-          @cities_filtered = 0
+          @weather_filtered = 0
         end
 
         # render without layout
@@ -330,32 +328,32 @@ class App < Roda
       end
 
       r.get "count" do # GET /weather/count
-        @cities_count = ::Model::City.count()
+        @weather_count = ::Model::Weather.count()
 
         # render without layout
         render("weather/count")
       end
 
       r.get do # GET /weather
-        struct_list = ::Service::City::Search.new(
+        search_result = ::Service::Weather::Search.new(
           query: "",
           offset: 0,
           limit: 50,
         ).call
 
-        @cities = struct_list.cities
-        @cities_count = @cities.length
-        @cities_filtered = 0
+        @weather_list = search_result.objects
+        @weather_count = @weather_list.length
+        @weather_filtered = 0
         @text = "Weather"
 
         view("weather/list", layout: "layouts/app")
       end
 
       r.delete Integer do |id| # delete weather/:id
-        city = ::Model::City.first(id: id)
+        weather = ::Model::Weather.first(id: id)
 
-        if city
-          city.delete
+        if weather
+          weather.delete
           # set response trigger event
           response.headers["HX-Trigger"] = "weatherCountChanged"
         end
@@ -364,49 +362,49 @@ class App < Roda
       end
 
       r.post "refresh" do # POST /weather/refresh
-        struct_list = ::Service::City::Search.new(
+        search_result = ::Service::Weather::Search.new(
           query: "",
           offset: 0,
           limit: 50,
         ).call
 
-        @cities = struct_list.cities
-        @cities_count = @cities.length
-        @cities_filtered = 0
+        @weather_list = search_result.objects
+        @weather_count = @weather_list.length
+        @weather_filtered = 0
 
         # render without layout
         render("weather/table")
       end
 
       r.post Integer do |id| # POST weather/:id
-        city = ::Model::City.first(id: id)
+        weather = ::Model::Weather.first(id: id)
 
-        if not city
+        if not weather
           r.halt(404)
         end
 
         # get weather
 
-        struct_get = ::Services::Weather::Api::Get.new(
+        get_result = ::Services::Weather::Api::Get.new(
           query: city.name
         ).call
 
-        if struct_get.code == 0
+        if get_result.code == 0
           # update city with weather data
-          ::Service::City::Update.new(
+          ::Service::Weather::Update.new(
             object: struct_get.data
           ).call
         end
 
-        struct_list = ::Service::City::Search.new(
+        struct_list = ::Service::Weather::Search.new(
           query: "",
           offset: 0,
           limit: 50,
         ).call
 
-        @cities = struct_list.cities
-        @cities_count = @cities.length
-        @cities_filtered = 0
+        @weather_list = struct_list.objects
+        @weather_count = @weather_list.length
+        @weather_filtered = 0
 
         # render without layout
         render("weather/table")
