@@ -11,6 +11,7 @@ gem "colorize"
 gem "csv"
 gem "dotenv"
 gem "falcon"
+gem "geocoder", require: false
 gem "graphql", require: false
 gem "http", require: false
 gem "oj", require: false

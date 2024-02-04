@@ -4,8 +4,8 @@ require "./boot.rb"
 
 require "rack/cors"
 
-APP_CITY_MAX_DEFAULT = 2**10
-APP_STOCK_MAX_DEFAULT = 5
+APP_CITY_MAX_DEFAULT ||= 2**10
+APP_STOCK_MAX_DEFAULT ||= 5.freeze
 
 use Rack::Cors do
   allow do
@@ -41,6 +41,7 @@ class App < Roda
 
   route do |r|
     @city_max = (ENV["APP_CITY_MAX"] || APP_CITY_MAX_DEFAULT).to_i
+    @mapbox_token = ENV["MAPBOX_TOKEN"]
     @stock_max = (ENV["APP_STOCK_MAX"] || APP_STOCK_MAX_DEFAULT).to_i
     @app_version = ENV["APP_VERSION"] || ENV["RACK_ENV"]
     @app_ws_uri = ENV["APP_WS_URI"]
@@ -106,6 +107,17 @@ class App < Roda
         end
       end
 
+      r.on "map" do
+        r.get "tileset" do # GET /api/v1/map/tileset?lat=x&lon=y
+          env[:api_name] = "tileset_get"
+
+          ::Api::V1::Map::Tileset.new(
+            request: request,
+            response: response,
+          ).call
+        end
+      end
+
       r.on "stocks" do
         r.on String do |ticker| # POST|PUT /api/v1/stocks/{ticker}?price=50.01
           env[:api_name] = "stock_add"
@@ -132,6 +144,46 @@ class App < Roda
       view("me", layout: "layouts/me")
     end
 
+    # map app
+    r.on "map" do
+      r.get "search" do # GET /map/search?city=Chicago
+        city_name = r.params["city"] || ""
+
+        struct_resolve = ::Service::City::Resolve.new(name: city_name, offset: 0, limit: 5).call
+
+        if not (city = struct_resolve.city)
+          r.halt(404)
+        end
+
+        @city_name = city.name
+        @city_lat = city.lat
+        @city_lon = city.lon
+
+        @bbox_lon_min, @bbox_lat_min, @bbox_lon_max, @bbox_lat_max = ::Service::City::Geo.bounding_box(city: city, radius: 3)
+
+        # update browser history
+        response.headers["HX-Push-Url"] = "/map?city=#{@city_name}"
+
+        render("map/city/show_map")
+      end
+
+      r.get do # GET /map?city=Chicago
+        city_name = r.params["city"] || ""
+
+        struct_resolve = ::Service::City::Resolve.new(name: city_name, offset: 0, limit: 5).call
+
+        if (city = struct_resolve.city)
+          @city_name = city.name
+          @city_lat = city.lat
+          @city_lon = city.lon
+
+          @bbox_lon_min, @bbox_lat_min, @bbox_lon_max, @bbox_lat_max = ::Service::City::Geo.bounding_box(city: city, radius: 3)
+        end
+
+        view("map/city/show", layout: "layouts/app")
+      end
+    end
+
     # plaid connect
     r.on "plaid" do
       r.get "connect" do
@@ -149,13 +201,13 @@ class App < Roda
       symbols_session = Set.new((r.session["symbols"] || "").split(",").map{ |s| s.strip.upcase })
       symbols_expire_session = (r.session["symbols_expire"] || Time.now.utc.to_i + (60 * 3)).to_i
 
-      r.get "reset" do # get /ticker/reset
+      r.get "reset" do # GET /ticker/reset
         r.session.delete("symbols_expire")
 
         r.redirect("/ticker")
       end
 
-      r.get do # get /ticker
+      r.get do # GET /ticker
         @symbols = (r.params["q"] || "").split(",").map{ |s| s.strip.upcase }.sort
         @stocks = {}
         @text = "Ticker"
@@ -171,7 +223,7 @@ class App < Roda
         view("ticker/index", layout: "layouts/app")
       end
 
-      r.post "add" do # post /ticker/add
+      r.post "add" do # POST /ticker/add
         add = Set.new([(r.params["q"] || "").upcase])
 
         if symbols_session.size < @stock_max
@@ -200,7 +252,7 @@ class App < Roda
         render("ticker/symbols")
       end
 
-      r.put "del" do # get /ticker/del
+      r.put "del" do # GET /ticker/del
         del = Set.new([(r.params["q"] || "").upcase])
         @symbols = symbols_session - del
         @symbols = @symbols.sort
@@ -220,7 +272,7 @@ class App < Roda
 
     # weather app
     r.on "weather" do
-      r.post "add" do # post /weather/add
+      r.post "add" do # POST /weather/add
         if ::Model::City.count() >= @city_max
           r.halt(422)
         end
@@ -240,7 +292,7 @@ class App < Roda
           ).call
         end
 
-        struct_list = ::Service::City::List.new(
+        struct_list = ::Service::City::Search.new(
           query: "",
           offset: 0,
           limit: 50,
@@ -254,11 +306,11 @@ class App < Roda
         render("weather/table")
       end
 
-      r.post "search" do # post /weather/search
+      r.post "search" do # POST /weather/search
         query_raw = r.params["q"]
         query = "name:~#{query_raw}"
 
-        struct_list = ::Service::City::List.new(
+        struct_list = ::Service::City::Search.new(
           query: query,
           offset: 0,
           limit: 50,
@@ -277,15 +329,15 @@ class App < Roda
         render("weather/table")
       end
 
-      r.get "count" do # get /weather/count
+      r.get "count" do # GET /weather/count
         @cities_count = ::Model::City.count()
 
         # render without layout
         render("weather/count")
       end
 
-      r.get do # get /weather
-        struct_list = ::Service::City::List.new(
+      r.get do # GET /weather
+        struct_list = ::Service::City::Search.new(
           query: "",
           offset: 0,
           limit: 50,
@@ -311,8 +363,8 @@ class App < Roda
         view("weather/delete", layout: "layouts/app")
       end
 
-      r.post "refresh" do # post /weather/refresh
-        struct_list = ::Service::City::List.new(
+      r.post "refresh" do # POST /weather/refresh
+        struct_list = ::Service::City::Search.new(
           query: "",
           offset: 0,
           limit: 50,
@@ -326,7 +378,7 @@ class App < Roda
         render("weather/table")
       end
 
-      r.post Integer do |id| # post weather/:id
+      r.post Integer do |id| # POST weather/:id
         city = ::Model::City.first(id: id)
 
         if not city
@@ -346,7 +398,7 @@ class App < Roda
           ).call
         end
 
-        struct_list = ::Service::City::List.new(
+        struct_list = ::Service::City::Search.new(
           query: "",
           offset: 0,
           limit: 50,

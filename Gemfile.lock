@@ -63,11 +63,11 @@ GEM
       rake
     fiber-annotation (0.2.0)
     fiber-local (1.0.0)
+    geocoder (1.8.2)
     google-protobuf (3.25.2)
     googleapis-common-protos-types (1.11.0)
       google-protobuf (~> 3.18)
-    graphql (2.2.5)
-      racc (~> 1.4)
+    graphql (2.2.7)
     http (5.1.1)
       addressable (~> 2.8)
       http-cookie (~> 1.0)
@@ -303,8 +303,7 @@ GEM
     psych (5.1.2)
       stringio
     public_suffix (5.0.4)
-    racc (1.7.3)
-    rack (3.0.8)
+    rack (3.0.9)
     rack-cors (2.0.1)
       rack (>= 2.0.0)
     rack-test (2.1.0)
@@ -320,7 +319,7 @@ GEM
     samovar (2.2.0)
       console (~> 1.0)
       mapping (~> 1.0)
-    sequel (5.76.0)
+    sequel (5.77.0)
       bigdecimal
     stringio (3.1.0)
     tilt (2.3.0)
@@ -344,6 +343,7 @@ DEPENDENCIES
   debug
   dotenv
   falcon
+  geocoder
   graphql
   http
   minitest

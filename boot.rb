@@ -1,6 +1,7 @@
 require "async"
 require "base58"
 require "dotenv"
+require "geocoder"
 require "graphql"
 require "oj"
 require "openssl"
@@ -22,6 +23,10 @@ require "./boot/json.rb"
 require "./boot/secret.rb"
 
 Boot::Secret.new.call
+
+if ENV["RACK_ENV"] in ["dev", "tst"]
+  require "debug"
+end
 
 struct_boot_database = Boot::Database.new.call
 

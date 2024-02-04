@@ -1,7 +1,7 @@
 require "minitest/autorun"
 require "test_helper"
 
-class CityListTest < Minitest::Test
+class CitySearchTest < Minitest::Test
   def setup
     @city = ::Model::City.create(data: {}, name: "Boston", lat: 42.35, lon: -71.05, temp: 30.00)
     @city = ::Model::City.create(data: {}, name: "Chicago", lat: 41.85, lon: -87.65, temp: 35.00)
@@ -12,7 +12,7 @@ class CityListTest < Minitest::Test
   end
 
   def test_query_all
-    struct = ::Service::City::List.new(
+    struct = ::Service::City::Search.new(
       query: "",
       offset: 0,
       limit: 10,
@@ -23,7 +23,7 @@ class CityListTest < Minitest::Test
   end
 
   def test_query_like_match
-    struct = ::Service::City::List.new(
+    struct = ::Service::City::Search.new(
       query: "name:~chi",
       offset: 0,
       limit: 10,
@@ -34,7 +34,7 @@ class CityListTest < Minitest::Test
   end
 
   def test_query_like_nomatch
-    struct = ::Service::City::List.new(
+    struct = ::Service::City::Search.new(
       query: "name:~ny",
       offset: 0,
       limit: 10,

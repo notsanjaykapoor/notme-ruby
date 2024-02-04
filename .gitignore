@@ -2,5 +2,6 @@
 .env.prd
 .env.tst
 .irb_history
+*.code-workspace
 
 /kubernetes/app/*.latest

@@ -1,9 +1,24 @@
 #!/usr/bin/env ruby
 
 require "async"
+require "dotenv"
+require "optparse"
 require "sequel"
 
 require "./boot/secret.rb"
+
+options = {
+  mode: "up",
+  version: -1,
+}
+
+OptionParser.new do |opt|
+  opt.on('--up') { options[:mode] = "up" }
+  opt.on('--down version') do |v|
+    options[:mode] = "down"
+    options[:version] = v
+  end
+end.parse!
 
 Boot::Secret.new.call
 
@@ -23,6 +38,9 @@ end
 db_name = url.split("/").last
 url_root = url.delete_suffix("/#{db_name}")
 
+migrate_mode = options[:mode]
+migrate_version = options[:version]
+
 Sequel.connect(url_root) do |db|
     begin
         db.execute "CREATE DATABASE #{db_name};"
@@ -33,5 +51,11 @@ Sequel.connect(url_root) do |db|
     end
 end
 
-system("sequel -m db/migrations #{url}")
+if migrate_mode == "up"
+    Console.logger.info("Boot::Migrate", "#{db_name} migrate #{migrate_mode}")
+    system("sequel -m db/migrations #{url}")
+else
+    Console.logger.info("Boot::Migrate", "#{db_name} migrate #{migrate_mode} version #{migrate_version}")
+    system("sequel -m db/migrations #{url} -M #{migrate_version}")
+end
 

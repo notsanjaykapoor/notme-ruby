@@ -41,9 +41,9 @@ module Services
 
         case @tokens
         in [/price/i, String => price]
-          stock = Stock.create(ticker: @ticker, price: price)
+          Stock.create(ticker: @ticker, price: price)
 
-          message = "ticker created"
+          struct.message = "ticker created"
         else
           struct.code = 422
           struct.message = "ticker #{@ticker} create price :price"
@@ -92,7 +92,7 @@ module Services
         in [/price/i, String => price]
           stock.update(price: price)
 
-          message = "ticker updated"
+          struct.message = "ticker updated"
         else
           struct.code = 422
           struct.message = "ticker #{@ticker} update price :price"

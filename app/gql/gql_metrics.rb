@@ -26,12 +26,12 @@ module GqlMetrics
 
       if query.result_values["data"].present?
         # parse data
-        status_codes = query.result_values["data"].values.map do |hash|
+        _status_codes = query.result_values["data"].values.map do |hash|
           hash["code"].to_i
         end
       else
         # no data, only errors
-        status_codes = struct.queries.map do |query|
+        _status_codes = struct.queries.map do |query|
           GRAPHQL_ERROR
         end
 
@@ -52,31 +52,31 @@ module GqlMetrics
         names: [FATAL_NAME],
       )
 
-      status_codes = [FATAL_ERROR]
+      _status_codes = [FATAL_ERROR]
     end
 
     user = query.context[:current_user]
-    user_id = user&.id.to_i
+    _user_id = user&.id.to_i
 
-    client = query.context[:current_client].to_s
+    _client = query.context[:current_client].to_s
 
     # prometheus doesn't like arrays, so record each query separately
 
-    struct.names.each_with_index do |name, index|
-      code = status_codes[index].to_i
+    # struct.names.each_with_index do |name, index|
+    #   code = status_codes[index].to_i
 
-      metric_data = {
-        client: client,
-        code: code,
-        name: "gql/#{name}",
-        query_count: struct.count,
-      }
+    #   metric_data = {
+    #     client: client,
+    #     code: code,
+    #     name: "gql/#{name}",
+    #     query_count: struct.count,
+    #   }
 
-      # _record_metric(
-      #   metric_data: metric_data,
-      #   time_msec: time_msec,
-      # )
-    end
+    #   _record_metric(
+    #     metric_data: metric_data,
+    #     time_msec: time_msec,
+    #   )
+    # end
 
     # log the request
 
@@ -94,10 +94,10 @@ module GqlMetrics
   def _log_query(client:, queries:, query_count:, query_names:, status_codes:, errors:, user_id:)
     if query_count == 1
       # special case when there is only 1 query
-      query_name_key = :query_name
-      query_name_value = query_names[0]
+      _query_name_key = :query_name
+      _query_name_value = query_names[0]
 
-      status_key = :status_code
+      _status_key = :status_code
       status_value = status_codes[0]
 
       if status_value.to_i >= 400
@@ -106,10 +106,10 @@ module GqlMetrics
         logger_method = :info
       end
     else
-      query_name_key = :query_names
-      query_name_value = query_names
+      _query_name_key = :query_names
+      _query_name_value = query_names
 
-      status_key = :status_codes
+      _status_key = :status_codes
       status_value = status_codes
 
       logger_method = :info
