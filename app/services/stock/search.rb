@@ -46,7 +46,7 @@ module Service
               query = query.tagged_with_any("industry:#{value}")
             end
           elsif ["price"].include?(field)
-            query = query.where(field: value)
+            query = query.where(field => value)
           elsif ["price_gte"].include?(field)
             query = query.price_gte(value)
           elsif ["price_lte"].include?(field)

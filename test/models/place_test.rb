@@ -18,13 +18,13 @@ class PlaceTest < Minitest::Test
       tags: ["food"],
     )
     assert place_1.id
-    assert place_1.city == "Chicago"
-    assert place_1.geo_json == {}
-    assert place_1.lat = 42.35
-    assert place_1.lon = -71.05
-    assert place_1.name == "Chicago Place"
+    assert_equal place_1.city, "Chicago"
+    assert_equal place_1.geo_json, {}
+    assert_equal place_1.lat, 42.35
+    assert_equal place_1.lon, -71.05
+    assert_equal place_1.name, "Chicago Place"
     assert place_1.source_id
-    assert place_1.tags == ["food"]
+    assert_equal place_1.tags, ["food"]
 
     place_2 = ::Model::Place.create(
       city: "Boston",

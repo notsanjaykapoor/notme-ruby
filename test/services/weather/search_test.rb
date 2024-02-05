@@ -18,8 +18,8 @@ class WeatherSearchTest < Minitest::Test
       limit: 10,
     ).call
 
-    assert struct.code == 0
-    assert struct.objects.length == 2
+    assert_equal struct.code, 0
+    assert_equal struct.objects.length, 2
   end
 
   def test_query_like_match
@@ -29,8 +29,8 @@ class WeatherSearchTest < Minitest::Test
       limit: 10,
     ).call
 
-    assert struct.code == 0
-    assert struct.objects.length == 1
+    assert_equal struct.code, 0
+    assert_equal struct.objects.length, 1
   end
 
   def test_query_like_nomatch
@@ -40,7 +40,7 @@ class WeatherSearchTest < Minitest::Test
       limit: 10,
     ).call
 
-    assert struct.code == 0
-    assert struct.objects.length == 0
+    assert_equal struct.code, 0
+    assert_equal struct.objects.length, 0
   end
 end

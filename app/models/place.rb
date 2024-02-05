@@ -49,8 +49,8 @@ module Model
         },
         "properties" => {
           "city" => city,
+          "color" => _tag_color(tags: tags),
           "name" => name,
-          "tag" => tags[0] || "default",
         },
       }
     end
@@ -65,6 +65,20 @@ module Model
 
     def updated_at_unix
       updated_at.to_i
+    end
+
+    protected
+
+    def _tag_color(tags:)
+      if tags.include?("hotel")
+        "green"
+      elsif tags.include?("bar") or tags.include?("food")
+        "blue"
+      elsif tags.include?("shopping")
+        "orange"
+      else
+        "yellow"
+      end
     end
 
   end

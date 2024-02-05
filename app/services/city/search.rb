@@ -34,8 +34,8 @@ module Service
                 value = value.gsub(/~/, '')
                 query = query.where(Sequel.lit("#{field} ilike ?", "%#{value}%"))
               else
-                value = value.gsub(/-/, " ").split(" ").map{ |s| s.capitalize }.join(" ")
-                query = query.where(field: value)
+                value = value.gsub(/-/, " ").split(" ").map{ |s| s.downcase }.join(" ")
+                query = query.where(Sequel.lit("lower(name) like ?", "#{value}%"))
               end
             elsif ["temp"].include?(field)
               query = query.where(temp: value)

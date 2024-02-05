@@ -5,7 +5,7 @@ module Service
     class Resolve
 
       def initialize(name:, offset:, limit:)
-        @name = name
+        @name = name.to_s
         @offset = offset
         @limit = limit
 
@@ -13,11 +13,11 @@ module Service
       end
 
       def call
-        struct = @struct.new(0, {}, [])
+        struct = @struct.new(0, nil, [])
 
         Console.logger.info(self, "#{Thread.current[:rid]} name '#{@name}'")
 
-        if @name == ""
+        if @name == "" or @name.length <= 3
           struct.code = 404
           return struct
         end
@@ -34,7 +34,7 @@ module Service
 
         if geocode_result.length == 0
           struct.code = 404
-          struct
+          return struct
         end
 
         update_result = ::Service::City::Update.new(data: geocode_result[0].data).call

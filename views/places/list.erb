@@ -1,0 +1,24 @@
+<div class="container grid grid-cols-12">
+  <div class="col-span-12 mt-10">
+    <h3 class="font-bold text-center">
+      <%= @text %>
+    </h3>
+  </div>
+  <div class="col-start-2 col-span-10 mt-2 opacity-50 text-center text-xs text-zinc-400">
+    @<%= @app_version %>
+  </div>
+</div>
+
+<div class="container grid grid-cols-12 mt-10">
+  <div class="col-start-2 col-span-2 font-bold text-sm">
+    <input type="search" name="q" placeholder="filter" autocomplete="off" hx-get="/places/search" hx-target="#places-table" hx-trigger="input changed delay:500ms, search" class="peer px-0 mx-4 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans text-sm font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-pink-600 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50">
+  </div>
+  <div class="col-start-10 col-span-2 font-normal text-sm">
+    <input type="search" name="name" placeholder="add" autocomplete="off" hx-on:htmx:after-request="this.value = ''"  hx-post="/placess/add" hx-target="#places-table" class="peer px-0 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans text-sm font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-pink-600 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50">
+  </div>
+</div>
+
+
+<div class="container grid grid-cols-12 mt-10" id="places-table">
+  <%= render "places/table" %>
+</div>

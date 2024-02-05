@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+
+require "optparse"
+
+require "./boot.rb"
+
+options = {
+  city: nil,
+  query: nil,
+  session: nil,
+}
+
+parser = OptionParser.new do |opts|
+  opts.on('--city CITY', "e.g. chicago") do |s|
+    options[:city] = s
+  end
+
+  opts.on('--query QUERY', "search query") do |s|
+    options[:query] = s
+  end
+
+  opts.on('--session id', "mapbox session") do |s|
+    options[:session] = s
+  end
+
+  opts.on('-h', '--help', 'help') do
+    puts opts.to_s
+    exit
+  end
+end
+
+parser.parse!
+
+query = options[:query].to_s
+session = options[:session] || ULID.generate
+
+subject = "Mapbox Search"
+
+resolve_result = ::Service::City::Resolve.new(name: options[:city], offset: 0, limit: 3).call
+
+if resolve_result.code != 0
+  exit(resolve_result.code)
+end
+
+city = resolve_result.city
+
+Console.logger.info(subject, "city #{city.name} query '#{query}' session '#{session}'")
+
+search_result = ::Service::Mapbox::Search.new(city: city, query: query, limit: 10, session: session).call
+
+search_result.data.each_with_index do |data, index|
+  puts index+1
+  puts data
+  puts
+end

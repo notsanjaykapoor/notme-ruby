@@ -33,6 +33,22 @@ module Model
       end
     end
 
+    def lat_min
+      bbox[0]
+    end
+
+    def lat_max
+      bbox[1]
+    end
+
+    def lon_min
+      bbox[2]
+    end
+
+    def lon_max
+      bbox[3]
+    end
+
     def tags
       super || []
     end

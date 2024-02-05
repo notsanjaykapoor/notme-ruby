@@ -29,5 +29,6 @@ gem "ulid", require: false
 group :development, :test do
   gem "debug"
   gem "minitest"
+  gem "minitest-reporters"
   gem "rack-test"
 end

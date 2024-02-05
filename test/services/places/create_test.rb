@@ -51,18 +51,18 @@ class PlacesCreateTest < Minitest::Test
       geo_json: geo_json,
     ).call
 
-    assert struct.code == 0
-    assert struct.places.length == 1
+    assert_equal struct.code, 0
+    assert_equal struct.places.length, 1
 
     place = struct.places[0]
 
-    assert place.id
-    assert place.city == "Chicago"
-    assert place.lat == 41.891392
-    assert place.lon == -87.631073
-    assert place.source_id == "dXJuOm1ieHBvaTo0NWZiZWE3Yi1hYTI3LTQ0NmItOTJlOC03MTlhYjliYmVhMTc"
-    assert place.source_name = "mapbox"
-    assert place.tags == ["drinks", "food"]
+    assert_operator place.id, :>, 0
+    assert_equal place.city, "Chicago"
+    assert_equal place.lat, 41.891392
+    assert_equal place.lon, -87.631073
+    assert_equal place.source_id, "dXJuOm1ieHBvaTo0NWZiZWE3Yi1hYTI3LTQ0NmItOTJlOC03MTlhYjliYmVhMTc"
+    assert_equal place.source_name, "mapbox"
+    assert_equal place.tags, ["bar", "food"]
   end
 
   def test_create_with_invalid_type
@@ -95,8 +95,8 @@ class PlacesCreateTest < Minitest::Test
       geo_json: geo_json,
     ).call
 
-    assert struct.code == 422
-    assert struct.places.length == 0
+    assert_equal struct.code, 422
+    assert_equal struct.places.length, 0
   end
 
 end

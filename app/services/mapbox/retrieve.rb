@@ -6,12 +6,12 @@ module Service
   module Mapbox
     class Retrieve
 
-      def initialize(id:)
+      def initialize(id:, session:)
         @id = id # mapbox id
 
         @token = ENV["MAPBOX_TOKEN"]
         @endpoint = "https://api.mapbox.com/search/searchbox/v1/retrieve/#{@id}"
-        @session_token = ULID.generate()
+        @session_token = session
         @http = ::Service::Mapbox::Http.instance
 
         @struct = Struct.new(:code, :data, :errors)

@@ -25,10 +25,11 @@
             bbox: [bbox_lon_min, bbox_lat_min, bbox_lon_max, bbox_lat_max],
             mapboxgl: mapboxgl,
             placeholder: 'Enter an address or place name',
-            zoom: 10,
+            zoom: 10, // same starting zoom as above
         });
 
-        map.addControl(geocoder, 'top-left');
+        // disable search box
+        // map.addControl(geocoder, 'top-left');
 
         const marker = new mapboxgl.Marker({
             'color': '#008000'
@@ -79,13 +80,15 @@
                 },
                 'circle-color': [
                     'match',
-                    ['get', 'tag'],
-                    'drinks',
+                    ['get', 'color'],
+                    'blue',
                     '#1D4ED8', // dark blue
-                    'food',
-                    '#1D4ED8', // dark blue
-                    'shopping',
+                    'green',
+                    '#16A34A', // green
+                    'orange',
                     '#EA580C', // orange/rust
+                    'yellow',
+                    '#EAB308', // mustard
                     'Convenience Store With Gas',
                     '#FF8C00',
                     'Pharmacy',
@@ -94,20 +97,12 @@
                     '#9ACD32',
                     'Small Grocery Store',
                     '#008000',
-                    'Supercenter',
-                    '#008000',
-                    'Superette',
-                    '#008000',
-                    'Supermarket',
-                    '#008000',
-                    'Warehouse Club Store',
-                    '#008000',
                     '#EAB308' // mustard - any other
                 ]
             }
         })
 
-        const ts_uri = `http://localhost:3030/api/v1/map/tileset?city=${city_name}&lat=${city_lat}&lon=${city_lon}`
+        const ts_uri = `http://localhost:3030/api/v1/maps/tileset?city=${city_name}&lat=${city_lat}&lon=${city_lon}`
         const query = await fetch(ts_uri, {method: 'GET'})
         const json = await query.json()
         console.log(city_name, "tileset", json)

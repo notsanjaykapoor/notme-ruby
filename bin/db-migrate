@@ -53,6 +53,17 @@ end
 
 Sequel.connect(url) do |db|
     begin
+        db.execute "create extension postgis;"
+    rescue Sequel::DatabaseError => e
+        if not e.message.match(/PG::Duplicate/)
+            # whoops
+            raise "postgis extension error"
+        end
+    end
+end
+
+Sequel.connect(url) do |db|
+    begin
         version = db[:schema_info].first.dig(:version)
     rescue Exception
         version = 0

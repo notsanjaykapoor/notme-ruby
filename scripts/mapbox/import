@@ -1,0 +1,46 @@
+#!/usr/bin/env ruby
+
+require "optparse"
+
+require "./boot.rb"
+
+options = {
+  id: nil,
+  session: nil,
+}
+
+parser = OptionParser.new do |opts|
+  opts.on('--id ID', "mapbox id") do |s|
+    options[:id] = s
+  end
+
+  opts.on('--session SESSION', "mapbox session") do |s|
+    options[:session] = s
+  end
+
+  opts.on('-h', '--help', 'help') do
+    puts opts.to_s
+    exit
+  end
+end
+
+parser.parse!
+
+subject = "Mapbox Import"
+
+id = options[:id]
+session = options[:session] || ULID.generate
+
+if not id
+  exit(1)
+end
+
+create_result = ::Service::Places::CreateFrom.new(mapbox_id: id, mapbox_session: session).call
+
+if create_result.code != 0
+  exit(create_result.code)
+end
+
+places_ids = create_result.places.map{ |o| o.id }
+
+Console.logger.info(subject, "places created #{places_ids}")

@@ -71,11 +71,17 @@ module Service
 
         for s in categories
           s_ = s.downcase
+
           if s_.include?("food")
             tags.add("food")
           end
+
           if s_.include?("bar") or s_.include?("drink")
-            tags.add("drinks")
+            tags.add("bar")
+          end
+
+          if s_.include?("hotel")
+            tags.add("hotel")
           end
         end
 

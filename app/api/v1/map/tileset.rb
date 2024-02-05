@@ -18,6 +18,7 @@ module Api
         end
 
         def call
+          # search places by city name; add support for radius search
           search_results = ::Service::Places::Search.new(
             query: "city:~#{@city}",
             offset: 0,
@@ -30,15 +31,6 @@ module Api
             "type"=>"FeatureCollection",
             "features" => features,
           }
-          # struct_retrieve = ::Service::Mapbox::Retrieve.new(
-          #     id: "dXJuOm1ieHBvaTo0NWZiZWE3Yi1hYTI3LTQ0NmItOTJlOC03MTlhYjliYmVhMTc"
-          # ).call
-
-          # struct_create = ::Service::Places::Create.new(geo_json: struct_retrieve.data).call
-
-          # puts struct_retrieve.data
-
-          # struct_retrieve.data
         end
 
       end

@@ -12,11 +12,11 @@ class WeatherApiTest < Minitest::Test
 
   def test_root
     get "/"
-    assert last_response.status == 302
+    assert_equal last_response.status, 302
   end
 
   def test_weather
     get "/weather"
-    assert last_response.status == 200
+    assert_equal last_response.status, 200
   end
 end

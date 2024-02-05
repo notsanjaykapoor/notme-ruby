@@ -5,6 +5,7 @@ module Service
     class QueryTokens
 
       HYPHEN_REPLACE_CHAR = " "
+      PLUS_REPLACE_CHAR = " "
 
       def initialize(query:)
         @query = query.to_s
@@ -27,8 +28,8 @@ module Service
             next
           end
 
-          # de-hyphenize value, replace with space
-          value = value.gsub(/-/, HYPHEN_REPLACE_CHAR)
+          # replace [-, +] chars with spaces
+          value = value.gsub(/-/, HYPHEN_REPLACE_CHAR).gsub(/\+/, PLUS_REPLACE_CHAR)
 
           struct.tokens.push(
             field: field,

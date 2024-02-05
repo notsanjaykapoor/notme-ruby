@@ -4,8 +4,9 @@ require "./boot.rb"
 
 require "rack/cors"
 
+APP_MAPBOX_MAX_DEFAULT ||= 50
 APP_WEATHER_MAX_DEFAULT ||= 2**10
-APP_STOCK_MAX_DEFAULT ||= 5.freeze
+APP_STOCK_MAX_DEFAULT ||= 5
 
 use Rack::Cors do
   allow do
@@ -40,11 +41,12 @@ class App < Roda
   end
 
   route do |r|
-    @weather_max = (ENV["APP_WEATHER_MAX"] || APP_WEATHER_MAX_DEFAULT).to_i
-    @mapbox_token = ENV["MAPBOX_TOKEN"]
-    @stock_max = (ENV["APP_STOCK_MAX"] || APP_STOCK_MAX_DEFAULT).to_i
     @app_version = ENV["APP_VERSION"] || ENV["RACK_ENV"]
     @app_ws_uri = ENV["APP_WS_URI"]
+    @mapbox_max = APP_MAPBOX_MAX_DEFAULT
+    @mapbox_token = ENV["MAPBOX_TOKEN"]
+    @stock_max = (ENV["APP_STOCK_MAX"] || APP_STOCK_MAX_DEFAULT).to_i
+    @weather_max = (ENV["APP_WEATHER_MAX"] || APP_WEATHER_MAX_DEFAULT).to_i
 
     r.post "graphql" do
       env[:api_name] = "gql"
@@ -107,8 +109,8 @@ class App < Roda
         end
       end
 
-      r.on "map" do
-        r.get "tileset" do # GET /api/v1/map/tileset?lat=x&lon=y
+      r.on "maps" do
+        r.get "tileset" do # GET /api/v1/maps/tileset?lat=x&lon=y
           env[:api_name] = "tileset_get"
 
           ::Api::V1::Map::Tileset.new(
@@ -144,16 +146,27 @@ class App < Roda
       view("me", layout: "layouts/me")
     end
 
-    # map app
-    r.on "map" do
-      r.get "search" do # GET /map/search?city=Chicago
-        city_name = r.params["city"] || ""
+    r.on "maps" do # map app
+      r.session["mapbox_session"] ||= ULID.generate()
+      mapbox_session = r.session["mapbox_session"]
+      mapbox_requests = (r.session["mapbox_requests"] || 0).to_i
 
-        struct_resolve = ::Service::City::Resolve.new(name: city_name, offset: 0, limit: 5).call
+      r.get "search" do # GET /maps/search?city=Chicago
+        city_name = r.params["city"].to_s
 
-        if not (city = struct_resolve.city)
-          r.halt(404)
+        if mapbox_requests >= @mapbox_max # throttle
+          response.status = 429
+          return render("map/city/show_map_empty")
         end
+
+        resolve_result = ::Service::City::Resolve.new(name: city_name, offset: 0, limit: 5).call
+
+        if resolve_result.code != 0
+          response.status = 404
+          return render("maps/city/show_map_empty")
+        end
+
+        city = resolve_result.city
 
         @city_name = city.name
         @city_lat = city.lat
@@ -161,29 +174,48 @@ class App < Roda
         @bbox_lat_min, @bbox_lat_max, @bbox_lon_min, @bbox_lon_max = city.bbox
 
         # update browser history
-        response.headers["HX-Push-Url"] = "/map?city=#{@city_name}"
+        response.headers["HX-Push-Url"] = "/maps?city=#{@city_name}"
+
+        r.session["mapbox_requests"] = mapbox_requests + 1
 
         render("map/city/show_map")
       end
 
-      r.get do # GET /map?city=Chicago
-        city_name = r.params["city"] || ""
+      r.get do # GET /maps or /maps?city=Chicago
+        city_name = r.params["city"].to_s
+
+        puts "mapbox session #{mapbox_session} requests #{mapbox_requests}" # xxx
+
+        if city_name == ""
+          return view("maps/city/show", layout: "layouts/app")
+        end
+
+        if mapbox_requests >= @mapbox_max # throttle
+          response.status = 429
+          return view("maps/city/show", layout: "layouts/app")
+        end
 
         resolve_result = ::Service::City::Resolve.new(name: city_name, offset: 0, limit: 5).call
 
-        if (city = resolve_result.city)
-          @city_name = city.name
-          @city_lat = city.lat
-          @city_lon = city.lon
-          @bbox_lat_min, @bbox_lat_max, @bbox_lon_min, @bbox_lon_max = city.bbox
+        if resolve_result.code != 0
+          response.status = 404
+          return view("map/city/show", layout: "layouts/app")
         end
 
-        view("map/city/show", layout: "layouts/app")
+        city = resolve_result.city
+
+        @city_name = city.name
+        @city_lat = city.lat
+        @city_lon = city.lon
+        @bbox_lat_min, @bbox_lat_max, @bbox_lon_min, @bbox_lon_max = city.bbox
+
+        r.session["mapbox_requests"] = mapbox_requests + 1
+
+        view("maps/city/show", layout: "layouts/app")
       end
     end
 
-    # plaid connect
-    r.on "plaid" do
+    r.on "plaid" do # plaid connect
       r.get "connect" do
         struct = ::Service::Plaid::Tokens::LinkCreate.new(client_name: "notme", user_id: "sanjay").call
 
@@ -194,8 +226,42 @@ class App < Roda
       end
     end
 
-    # ticker app
-    r.on "ticker" do
+    r.on "places" do # places app
+      r.get "search" do # GET /places/search?q=chicago
+        query = r.params["q"].to_s
+        @query = ::Service::Database::Query.normalize(query: query, default_field: "name", default_match: "like")
+
+        search_result = ::Service::Places::Search.new(
+          query: @query,
+          offset: 0,
+          limit: 50,
+        ).call
+
+        @places_list = search_result.places
+        @places_count = @places_list.length
+
+        # render without layout
+        render("places/table")
+      end
+
+      r.get do # GET /places
+        @query = ""
+
+        search_result = ::Service::Places::Search.new(
+          query: @query,
+          offset: 0,
+          limit: 50,
+        ).call
+
+        @places_list = search_result.places
+        @places_count = @places_list.length
+        @text = "Places"
+
+        view("places/list", layout: "layouts/app")
+      end
+    end
+
+    r.on "ticker" do # ticker app
       symbols_session = Set.new((r.session["symbols"] || "").split(",").map{ |s| s.strip.upcase })
       symbols_expire_session = (r.session["symbols_expire"] || Time.now.utc.to_i + (60 * 3)).to_i
 
@@ -229,7 +295,8 @@ class App < Roda
           code = ::Service::Stock::Verify.new(symbol: add.first).call
 
           if code != 0
-            r.halt(404)
+            response.status = 404
+            return r.halt(404)
           end
 
           symbols_session = symbols_session + add
@@ -268,11 +335,11 @@ class App < Roda
       end
     end
 
-    # weather app
-    r.on "weather" do
+    r.on "weather" do # weather app
       r.post "add" do # POST /weather/add
         if ::Model::Weather.count() >= @weather_max
-          r.halt(422)
+          response.status = 429
+          return r.halt(429)
         end
 
         name = r.params["name"]
@@ -380,7 +447,8 @@ class App < Roda
         weather = ::Model::Weather.first(id: id)
 
         if not weather
-          r.halt(404)
+          response.status = 404
+          return r.halt(404)
         end
 
         # get weather

@@ -2,11 +2,6 @@ require "minitest/autorun"
 require "test_helper"
 
 class CityUpdateTest < Minitest::Test
-  # def setup
-  #   @city = ::Model::City.create(data: {}, name: "Boston", lat: 42.35, lon: -71.05)
-  #   @city = ::Model::City.create(data: {}, name: "Chicago", lat: 41.85, lon: -87.65)
-  # end
-
   def teardown
     ::Model::City.truncate
   end
@@ -39,15 +34,15 @@ class CityUpdateTest < Minitest::Test
 
     update_result = ::Service::City::Update.new(data: data).call
 
-    assert update_result.code == 0
+    assert_equal update_result.code, 0
 
     city = update_result.city
 
-    assert city.bbox == [41.644531, 42.023040, -87.940088, -87.524081] # 6 digits
-    assert city.country_code == "US"
-    assert city.lat == 41.875562 # 6 digits
-    assert city.lon == -87.624421 # 6 digits
-    assert city.name == "Chicago"
+    assert_equal city.bbox, [41.644531, 42.023040, -87.940088, -87.524081] # 6 digits
+    assert_equal city.country_code, "US"
+    assert_equal city.lat, 41.875562 # 6 digits
+    assert_equal city.lon, -87.624421 # 6 digits
+    assert_equal city.name, "Chicago"
   end
 
 end
