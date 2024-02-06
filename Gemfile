@@ -28,6 +28,8 @@ gem "ulid", require: false
 
 group :development, :test do
   gem "debug"
+  gem "guard"
+  gem "guard-shell"
   gem "minitest"
   gem "minitest-reporters"
   gem "rack-test"
