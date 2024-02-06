@@ -1,12 +1,16 @@
 # boot app
 
 require "./boot.rb"
+require "./app_maps.rb"
+require "./app_places.rb"
+require "./app_ticker.rb"
+require "./app_weather.rb"
 
 require "rack/cors"
 
 APP_MAPBOX_MAX_DEFAULT ||= 50
+APP_TICKER_MAX_DEFAULT ||= 5
 APP_WEATHER_MAX_DEFAULT ||= 2**10
-APP_STOCK_MAX_DEFAULT ||= 5
 
 use Rack::Cors do
   allow do
@@ -43,10 +47,6 @@ class App < Roda
   route do |r|
     @app_version = ENV["APP_VERSION"] || ENV["RACK_ENV"]
     @app_ws_uri = ENV["APP_WS_URI"]
-    @mapbox_max = APP_MAPBOX_MAX_DEFAULT
-    @mapbox_token = ENV["MAPBOX_TOKEN"]
-    @stock_max = (ENV["APP_STOCK_MAX"] || APP_STOCK_MAX_DEFAULT).to_i
-    @weather_max = (ENV["APP_WEATHER_MAX"] || APP_WEATHER_MAX_DEFAULT).to_i
 
     r.post "graphql" do
       env[:api_name] = "gql"
@@ -146,73 +146,8 @@ class App < Roda
       view("me", layout: "layouts/me")
     end
 
-    r.on "maps" do # map app
-      r.session["mapbox_session"] ||= ULID.generate()
-      mapbox_session = r.session["mapbox_session"]
-      mapbox_requests = (r.session["mapbox_requests"] || 0).to_i
-
-      r.get "search" do # GET /maps/search?city=Chicago
-        city_name = r.params["city"].to_s
-
-        if mapbox_requests >= @mapbox_max # throttle
-          response.status = 429
-          return render("map/city/show_map_empty")
-        end
-
-        resolve_result = ::Service::City::Resolve.new(name: city_name, offset: 0, limit: 5).call
-
-        if resolve_result.code != 0
-          response.status = 404
-          return render("maps/city/show_map_empty")
-        end
-
-        city = resolve_result.city
-
-        @city_name = city.name
-        @city_lat = city.lat
-        @city_lon = city.lon
-        @bbox_lat_min, @bbox_lat_max, @bbox_lon_min, @bbox_lon_max = city.bbox
-
-        # update browser history
-        response.headers["HX-Push-Url"] = "/maps?city=#{@city_name}"
-
-        r.session["mapbox_requests"] = mapbox_requests + 1
-
-        render("map/city/show_map")
-      end
-
-      r.get do # GET /maps or /maps?city=Chicago
-        city_name = r.params["city"].to_s
-
-        puts "mapbox session #{mapbox_session} requests #{mapbox_requests}" # xxx
-
-        if city_name == ""
-          return view("maps/city/show", layout: "layouts/app")
-        end
-
-        if mapbox_requests >= @mapbox_max # throttle
-          response.status = 429
-          return view("maps/city/show", layout: "layouts/app")
-        end
-
-        resolve_result = ::Service::City::Resolve.new(name: city_name, offset: 0, limit: 5).call
-
-        if resolve_result.code != 0
-          response.status = 404
-          return view("map/city/show", layout: "layouts/app")
-        end
-
-        city = resolve_result.city
-
-        @city_name = city.name
-        @city_lat = city.lat
-        @city_lon = city.lon
-        @bbox_lat_min, @bbox_lat_max, @bbox_lon_min, @bbox_lon_max = city.bbox
-
-        r.session["mapbox_requests"] = mapbox_requests + 1
-
-        view("maps/city/show", layout: "layouts/app")
-      end
+    r.on "maps" do
+      r.run AppMaps
     end
 
     r.on "plaid" do # plaid connect
@@ -226,257 +161,16 @@ class App < Roda
       end
     end
 
-    r.on "places" do # places app
-      r.get "search" do # GET /places/search?q=chicago
-        query = r.params["q"].to_s
-        @query = ::Service::Database::Query.normalize(query: query, default_field: "name", default_match: "like")
-
-        search_result = ::Service::Places::Search.new(
-          query: @query,
-          offset: 0,
-          limit: 50,
-        ).call
-
-        @places_list = search_result.places
-        @places_count = @places_list.length
-
-        # render without layout
-        render("places/table")
-      end
-
-      r.get do # GET /places
-        @query = ""
-
-        search_result = ::Service::Places::Search.new(
-          query: @query,
-          offset: 0,
-          limit: 50,
-        ).call
-
-        @places_list = search_result.places
-        @places_count = @places_list.length
-        @text = "Places"
-
-        view("places/list", layout: "layouts/app")
-      end
+    r.on "places" do
+      r.run AppPlaces
     end
 
-    r.on "ticker" do # ticker app
-      symbols_session = Set.new((r.session["symbols"] || "").split(",").map{ |s| s.strip.upcase })
-      symbols_expire_session = (r.session["symbols_expire"] || Time.now.utc.to_i + (60 * 3)).to_i
-
-      r.get "reset" do # GET /ticker/reset
-        r.session.delete("symbols_expire")
-
-        r.redirect("/ticker")
-      end
-
-      r.get do # GET /ticker
-        @symbols = (r.params["q"] || "").split(",").map{ |s| s.strip.upcase }.sort
-        @stocks = {}
-        @text = "Ticker"
-        @expires_unix = symbols_expire_session
-
-        if @symbols.size > @stock_max
-          r.redirect "/ticker"
-        end
-
-        r.session["symbols"] = @symbols.join(",")
-        r.session["symbols_expire"] = @expires_unix
-
-        view("ticker/index", layout: "layouts/app")
-      end
-
-      r.post "add" do # POST /ticker/add
-        add = Set.new([(r.params["q"] || "").upcase])
-
-        if symbols_session.size < @stock_max
-          # validate symbol
-          code = ::Service::Stock::Verify.new(symbol: add.first).call
-
-          if code != 0
-            response.status = 404
-            return r.halt(404)
-          end
-
-          symbols_session = symbols_session + add
-          symbols_session = symbols_session.sort
-        end
-
-        @symbols = symbols_session
-
-        # update session
-        r.session["symbols"] = @symbols.join(",")
-
-        # update browser history
-        response.headers["HX-Push-Url"] = "/ticker?q=#{@symbols.map{ |s| s.downcase }.join(",")}"
-
-        # trigger event
-        response.headers["HX-Trigger"] = "watch-changed"
-
-        render("ticker/symbols")
-      end
-
-      r.put "del" do # GET /ticker/del
-        del = Set.new([(r.params["q"] || "").upcase])
-        @symbols = symbols_session - del
-        @symbols = @symbols.sort
-
-        # update session
-        r.session["symbols"] = @symbols.join(",")
-
-        # update browser history
-        response.headers["HX-Push-Url"] = "/ticker?q=#{@symbols.map{ |s| s.downcase }.join(",")}"
-
-        # trigger event
-        response.headers["HX-Trigger"] = "watch-changed"
-
-        render("ticker/symbols")
-      end
+    r.on "ticker" do
+      r.run AppTicker
     end
 
-    r.on "weather" do # weather app
-      r.post "add" do # POST /weather/add
-        if ::Model::Weather.count() >= @weather_max
-          response.status = 429
-          return r.halt(429)
-        end
-
-        name = r.params["name"]
-
-        # get weather
-
-        struct_get = ::Services::Weather::Api::Get.new(
-          query: name
-        ).call
-
-        if struct_get.code == 0
-          # update weather data
-          _update_result = ::Service::Weather::Update.new(
-            object: struct_get.data
-          ).call
-        end
-
-        struct_list = ::Service::Weather::Search.new(
-          query: "",
-          offset: 0,
-          limit: 50,
-        ).call
-
-        @weather_list = struct_list.objects
-        @weather_count = @weather_list.length
-        @weather_filtered = 0
-
-        # render without layout
-        render("weather/table")
-      end
-
-      r.post "search" do # POST /weather/search
-        query_raw = r.params["q"]
-        query = "name:~#{query_raw}"
-
-        struct_list = ::Service::Weather::Search.new(
-          query: query,
-          offset: 0,
-          limit: 50,
-        ).call
-
-        @weather_list = struct_list.objects
-        @weather_count = @weather_list.length
-
-        if query_raw != ""
-          @weather_filtered = 1
-        else
-          @weather_filtered = 0
-        end
-
-        # render without layout
-        render("weather/table")
-      end
-
-      r.get "count" do # GET /weather/count
-        @weather_count = ::Model::Weather.count()
-
-        # render without layout
-        render("weather/count")
-      end
-
-      r.get do # GET /weather
-        search_result = ::Service::Weather::Search.new(
-          query: "",
-          offset: 0,
-          limit: 50,
-        ).call
-
-        @weather_list = search_result.objects
-        @weather_count = @weather_list.length
-        @weather_filtered = 0
-        @text = "Weather"
-
-        view("weather/list", layout: "layouts/app")
-      end
-
-      r.delete Integer do |id| # delete weather/:id
-        weather = ::Model::Weather.first(id: id)
-
-        if weather
-          weather.delete
-          # set response trigger event
-          response.headers["HX-Trigger"] = "weatherCountChanged"
-        end
-
-        view("weather/delete", layout: "layouts/app")
-      end
-
-      r.post "refresh" do # POST /weather/refresh
-        search_result = ::Service::Weather::Search.new(
-          query: "",
-          offset: 0,
-          limit: 50,
-        ).call
-
-        @weather_list = search_result.objects
-        @weather_count = @weather_list.length
-        @weather_filtered = 0
-
-        # render without layout
-        render("weather/table")
-      end
-
-      r.post Integer do |id| # POST weather/:id
-        weather = ::Model::Weather.first(id: id)
-
-        if not weather
-          response.status = 404
-          return r.halt(404)
-        end
-
-        # get weather
-
-        get_result = ::Services::Weather::Api::Get.new(
-          query: city.name
-        ).call
-
-        if get_result.code == 0
-          # update city with weather data
-          ::Service::Weather::Update.new(
-            object: struct_get.data
-          ).call
-        end
-
-        struct_list = ::Service::Weather::Search.new(
-          query: "",
-          offset: 0,
-          limit: 50,
-        ).call
-
-        @weather_list = struct_list.objects
-        @weather_count = @weather_list.length
-        @weather_filtered = 0
-
-        # render without layout
-        render("weather/table")
-      end
+    r.on "weather" do
+      r.run AppWeather
     end
   end
 end

@@ -4,8 +4,8 @@ module Service
   module City
     class Resolve
 
-      def initialize(name:, offset:, limit:)
-        @name = name.to_s
+      def initialize(query:, offset:, limit:)
+        @query = query.to_s
         @offset = offset
         @limit = limit
 
@@ -15,14 +15,9 @@ module Service
       def call
         struct = @struct.new(0, nil, [])
 
-        Console.logger.info(self, "#{Thread.current[:rid]} name '#{@name}'")
+        Console.logger.info(self, "#{Thread.current[:rid]} query '#{@query}'")
 
-        if @name == "" or @name.length <= 3
-          struct.code = 404
-          return struct
-        end
-
-        search_result = ::Service::City::Search.new(query: "name:~#{@name}", offset: 0, limit: 5).call
+        search_result = ::Service::City::Search.new(query: @query, offset: 0, limit: 5).call
 
         if search_result.cities.length > 0
           struct.city = search_result.cities[0]

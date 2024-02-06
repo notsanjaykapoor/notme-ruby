@@ -12,12 +12,15 @@ module Service
         @city = city
         @query = CGI.escape(query)
 
-        @token = ENV["MAPBOX_TOKEN"]
         @endpoint = "https://api.mapbox.com/search/searchbox/v1/suggest"
+        @http = ::Service::Mapbox::Http.instance
+
+        @bbox = [@city.lon_min, @city.lat_min, @city.lon_max, @city.lat_max].join(",")
         @limit = [limit, 10].min  # mapbox limit is 10
         @session_token = session
-        @proximity = "#{city.lon},#{city.lat}"
-        @http = ::Service::Mapbox::Http.instance
+        @proximity = "#{@city.lon},#{@city.lat}"
+        @token = ENV["MAPBOX_TOKEN"]
+        @types = "poi" 
 
         @struct = Struct.new(:code, :data, :errors)
       end
@@ -32,8 +35,10 @@ module Service
             q: @query, # required
             access_token: @token, # required
             session_token: @session_token, # required
+            bbox: @bbox,
             limit: @limit,
             proximity: @proximity,
+            types: @types,
           }
 
           response = @http.get(@endpoint, params: params)

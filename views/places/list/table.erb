@@ -1,5 +1,5 @@
 <div class="col-start-2 col-span-10 mx-4 font-normal text-zinc-400 text-xs">
-  query '<%= @query %>', results <%= @places_count %>
+  query '<%= query %>', results <%= places_count %>
 </div>
 
 <table class="col-start-2 col-span-10">
@@ -11,7 +11,7 @@
     </tr>
   </thead>
   <tbody id="places-data">
-    <% @places_list.each do |place| %>
+    <% places_list.each do |place| %>
       <tr class="group hover:bg-zinc-50 odd:bg-white even:bg-slate-50 text-sm">
         <td class="p-4 pr-6 font-normal">
           <%= place.name %>
