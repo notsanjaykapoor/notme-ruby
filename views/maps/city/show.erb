@@ -5,19 +5,21 @@
 
 <div class="container grid grid-cols-12 mt-5 mx-5">
   <div class="col-start-0 col-span-2 font-normal text-sm" id="city-search">
-    <input id="city-search-input" type="search" name="city" placeholder="city" value="<%= @city and @city.name %>" autocomplete="off" hx-get="/maps/search" hx-target="#city-map" class="peer px-0 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans text-sm font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-pink-600 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50">
+    <input id="city-search-input" type="search" name="city" placeholder="city" value="<%= city and city.name %>" autocomplete="off" hx-get="/maps" hx-target="#city-map" class="peer px-0 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans text-sm font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-pink-600 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50">
   </div>
+  <span class="col-start-3 col-span-1 float-right font-normal ml-10 mt-5 text-xs" id="city-count">
+  </span>
 </div>
 
 <div id="city-map">
-    <% if city %>
-        <%= render "maps/city/show_map", locals: {city: city, mapbox_token: mapbox_token} %>
-    <% end %>
+  <% if city %>
+    <%= render "maps/city/show_map", locals: {city: city, mapbox_token: mapbox_token} %>
+  <% end %>
 </div>
 
 <script>
   document.body.addEventListener('htmx:pushedIntoHistory', function(event) {
-    // event after history changed
+    // event when url history is changed
     uri = `http://host${event.detail.path}`
     city = new URL(uri).searchParams.get('city')
     console.log("city change", city)

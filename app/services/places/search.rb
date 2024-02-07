@@ -29,13 +29,21 @@ module Service
             field = object[:field]
             value = object[:value]
 
-            if ["city"].include?(field) # e.g city:chicago
+            if ["city"].include?(field) # e.g city:chicago, city:1
               if value[/^~/]
                 value = value.gsub(/~/, '')
                 query = query.where(Sequel.lit("city ilike ?", "%#{value}%"))
               else
-                value = value.gsub(/-/, " ").split(" ").map{ |s| s.downcase }.join(" ")
-                query = query.where(Sequel.lit("lower(city) like ?", "#{value}%"))
+                value = value.gsub(/-/, " ")
+                if value.match(/^[\d,]+$/)
+                  city_ids = value.split(" ").map{ |s| s.to_i }
+                  city_names = ::Model::City.where(id: city_ids).map{ |o| o.name }
+                  city_name = city_names[0].downcase
+                  query = query.where(Sequel.lit("lower(city) like ?", "#{city_name}%"))
+                else
+                  value = value.split(" ").map{ |s| s.downcase }.join(" ")
+                  query = query.where(Sequel.lit("lower(city) like ?", "#{value}%"))
+                end
               end
             elsif ["name"].include?(field)
               if value[/^~/]

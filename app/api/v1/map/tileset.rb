@@ -10,6 +10,7 @@ module Api
           @response = response
 
           @params = @request.params
+          @city_id = @params["city_id"].to_i
           @city = @params["city"]
           @lat = @params["lat"]
           @lon = @params["lon"]
@@ -19,8 +20,14 @@ module Api
 
         def call
           # search places by city name; add support for radius search
+          if @city_id > 0
+            query = "city:#{@city_id}"
+          else
+            query = "city:~#{@city}"
+          end
+
           search_results = ::Service::Places::Search.new(
-            query: "city:~#{@city}",
+            query: query,
             offset: 0,
             limit: 100,
           ).call

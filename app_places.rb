@@ -8,10 +8,15 @@ class AppPlaces < Roda
   plugin :sessions, secret: ENV["APP_SECRET"]
 
   route do |r|
+    app_version = ENV["APP_VERSION"] || ENV["RACK_ENV"]
+    htmx_request = r.headers["HX-Request"] ? 1 : 0
+
+    mapbox_max = (ENV["APP_MAPBOX_MAX"] || APP_MAPBOX_MAX_DEFAULT).to_i
+    mapbox_token = ENV["MAPBOX_TOKEN"]
+
     r.session["mapbox_session"] ||= ULID.generate()
     mapbox_session = r.session["mapbox_session"]
-
-    app_version = ENV["APP_VERSION"] || ENV["RACK_ENV"]
+    mapbox_requests = (r.session["mapbox_requests"] || 0).to_i
 
     # GET /places/search?q=chicago
     r.get "search" do
@@ -31,10 +36,9 @@ class AppPlaces < Roda
       render("places/list/table", locals: {places_count: places_count, places_list: places_list, query: query})
     end
 
-    # POST /places/mapbox/add?id=xxx
-    r.post "mapbox/add" do
-      # todo
-      mapbox_id = r.params["id"].to_s
+    # POST /places/add?mapbox_id=xxx, htmx
+    r.post "add" do
+      mapbox_id = r.params["mapbox_id"].to_s
       create_result = ::Service::Places::CreateFrom.new(mapbox_id: mapbox_id, mapbox_session: mapbox_session).call
 
       if create_result.code != 0
@@ -44,7 +48,7 @@ class AppPlaces < Roda
       return render("places/mapbox/add_ok")
     end
 
-    # GET /places/mapbox/query?q=food+near:chicago
+    # GET /places/mapbox/query?q=food+near:chicago, htmx
     r.get "mapbox/query" do
       mapbox_query = r.params["q"].to_s
 
@@ -53,7 +57,7 @@ class AppPlaces < Roda
 
       if not match_query
         @error = "invalid search"
-        return render("places/mapbox/add_error")
+        return render("places/mapbox/query_error")
       end
 
       _, city_query = match_query[2].split(":")
@@ -62,7 +66,7 @@ class AppPlaces < Roda
 
       if resolve_result.code != 0
         @error = "invalid location"
-        return render("places/mapbox/add_error")
+        return render("places/mapbox/query_error")
       end
 
       city = resolve_result.city
@@ -77,12 +81,14 @@ class AppPlaces < Roda
       #     "full_address" => "800 W Randolph St",
       #     "feature_type" => "poi",
       #     "mapbox_id"=>"dXJuOm1ieHBvaTo2YWYzNGVjZi0yNTFjLTRiMDMtYmMwNS01MGE0NDk0ZDkwMzg",
+      #     "poi_category"=>["coworking space", "office"]",
       #   },
       #   {
       #     "name" => "Random Spot",
       #     "full_address" => "801 W Randolph St",
       #     "feature_type" => "poi",
       #     "mapbox_id"=>"dXJuOm1ieHBvaTo2YWYzNGVjZi0yNTFjLTRiMDMtYmMwNS01MGE0NDk0ZDkwMxx",
+      #     "poi_category"=>["coworking space", "office"]","
       #   },
       # ]
 
@@ -97,7 +103,7 @@ class AppPlaces < Roda
       render("places/mapbox/table", locals: {mapbox_ids: mapbox_ids, mapbox_list: mapbox_list})
     end
 
-    # GET /places/mapbox
+    # GET /places/mapbox, html
     r.get "mapbox" do
       text = "Mapbox Search"
 

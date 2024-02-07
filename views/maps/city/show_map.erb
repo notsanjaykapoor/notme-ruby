@@ -1,7 +1,11 @@
 <div id='map' style='width: 100%; position: absolute; top: 150px; bottom: 0; left: 0; right: 0;'></div>
+
+<span id="test" hx-get="/maps/city/<%= city.id %>/count" hx-trigger="map-changed from:body"/>
+
 <script>
     mapboxgl.accessToken = "<%= mapbox_token %>"
 
+    var city_id = "<%= city.id %>"
     var city_name = "<%= city.name %>"
     var city_lon = parseFloat("<%= city.lon %>")
     var city_lat = parseFloat("<%= city.lat %>")
@@ -102,11 +106,16 @@
             }
         })
 
-        const ts_uri = `http://localhost:3030/api/v1/maps/tileset?city=${city_name}&lat=${city_lat}&lon=${city_lon}`
+        const ts_uri = `http://localhost:3030/api/v1/maps/tileset?city_id=${city_id}&lat=${city_lat}&lon=${city_lon}`
         const query = await fetch(ts_uri, {method: 'GET'})
         const json = await query.json()
         console.log(city_name, "tileset", json)
+        
+        // update map
         map.getSource('tilequery').setData(json)
+
+        // update map count
+        document.getElementById("city-count").innerHTML = `${json.features.length} places`
 
         const popup = new mapboxgl.Popup()
 

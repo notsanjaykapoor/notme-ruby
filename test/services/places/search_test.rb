@@ -3,7 +3,7 @@ require "test_helper"
 
 class PlaceSearchTest < Minitest::Test
   def setup
-    ::Model::City.create(
+    @city_chicago = ::Model::City.create(
       bbox: [41.644531,42.023040,-87.940088,-87.524081],
       data: {},
       name: "Chicago",
@@ -50,6 +50,17 @@ class PlaceSearchTest < Minitest::Test
     assert_equal struct.places.length, 2
   end
 
+  def test_query_city_id_match
+    struct = ::Service::Places::Search.new(
+      query: "city:#{@city_chicago.id}",
+      offset: 0,
+      limit: 10,
+    ).call
+
+    assert_equal 0, struct.code
+    assert_equal 1, struct.places.length
+  end
+
   def test_query_city_like_match
     struct = ::Service::Places::Search.new(
       query: "city:~chi",
@@ -57,8 +68,8 @@ class PlaceSearchTest < Minitest::Test
       limit: 10,
     ).call
 
-    assert_equal struct.code, 0
-    assert_equal struct.places.length, 1
+    assert_equal 0, struct.code
+    assert_equal 1, struct.places.length
   end
 
   def test_query_city_like_nomatch
@@ -68,8 +79,8 @@ class PlaceSearchTest < Minitest::Test
       limit: 10,
     ).call
 
-    assert_equal struct.code, 0
-    assert_equal struct.places.length, 0
+    assert_equal 0, struct.code
+    assert_equal 0, struct.places.length
   end
 
   def test_query_city_near_match
@@ -80,8 +91,8 @@ class PlaceSearchTest < Minitest::Test
     ).call
 
     # should return 1 place within city bounds
-    assert_equal struct.code, 0
-    assert_equal struct.places.length, 1
+    assert_equal 0, struct.code
+    assert_equal 1, struct.places.length
   end
 
   def test_query_city_near_invalid
@@ -92,8 +103,8 @@ class PlaceSearchTest < Minitest::Test
     ).call
 
     # should return no places
-    assert_equal struct.code, 422
-    assert_equal struct.places.length, 0
+    assert_equal 422, struct.code
+    assert_equal 0, struct.places.length
   end
 
   def test_query_name_prefix_match
@@ -103,8 +114,8 @@ class PlaceSearchTest < Minitest::Test
       limit: 10,
     ).call
 
-    assert_equal struct.code, 0
-    assert_equal struct.places.length, 1
+    assert_equal 0, struct.code
+    assert_equal 1, struct.places.length
   end
 
   def test_query_field_invalid
@@ -115,8 +126,8 @@ class PlaceSearchTest < Minitest::Test
     ).call
 
     # should return no places
-    assert_equal struct.code, 422
-    assert_equal struct.places.length, 0
+    assert_equal 422, struct.code
+    assert_equal 0, struct.places.length
   end
 
 end

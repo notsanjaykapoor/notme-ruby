@@ -4,6 +4,7 @@
       <th class="p-4 pr-6">name</th>
       <th class="p-4 pr-6">address</th>
       <th class="p-4 pr-6">type</th>
+      <th class="p-4 pr-6">categories</th>
       <th class="p-4 pr-6"></th>
     </tr>
   </thead>
@@ -21,9 +22,12 @@
         <td class="p-4 pr-6 font-normal">
           <%= place.dig("feature_type") %>
         </td>
+        <td class="p-4 pr-6 font-normal">
+          <%= place.dig("poi_category")[0..1].join(", ") %>
+        </td>
         <td>
           <% if not mapbox_ids.include?(mapbox_id) %>
-            <button class="bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold py-1 px-2 rounded-full" hx-post="/places/mapbox/add?id=<%= mapbox_id %>" hx-target="closest tr" hx-swap="outerHTML swap:1s">
+            <button class="bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold py-1 px-2 rounded-full" hx-post="/places/add?mapbox_id=<%= mapbox_id %>" hx-target="closest tr" hx-swap="outerHTML swap:1s">
               +
             </button>
           <% end %>
