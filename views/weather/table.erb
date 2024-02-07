@@ -1,5 +1,8 @@
-<div class="col-start-2 col-span-10 font-semibold pl-4 pb-5 text-left text-sm text-indigo-600" id="weather-table-count" hx-get="/weather/count" hx-trigger="weatherCountChanged from:body">
-  <%= render "weather/count" %>
+<div class="col-start-2 col-span-10 mx-4 mr-0 font-normal text-zinc-400 text-xs">
+  query '<%= query %>', results <%= weather_count %>
+  <span class="float-right font-normal text-zinc-400 text-xs">
+    <%= Time.now %>
+  </span>
 </div>
 
 <table class="col-start-2 col-span-10">
@@ -12,8 +15,8 @@
       <th class="p-4 pr-6"></th>
     </tr>
   </thead>
-  <tbody id="weather-data">
-    <% @weather_list.each do |weather| %>
+  <tbody>
+    <% weather_list.each do |weather| %>
       <tr class="group hover:bg-zinc-50 odd:bg-white even:bg-slate-50 text-sm">
         <% seconds_ago = weather.dig(:seconds_ago) %>
         <% seconds_alert = seconds_ago < 60 ? 'bg-yellow-400' : '' %>
@@ -35,15 +38,15 @@
           <% end %>
         </td>
         <td class="p-4 pr-6 font-normal text-sm <%= seconds_alert %>">
-          <a class="cursor-pointer hover:underline text-orange-500 font-semibold p-1 text-xs" hx-delete=<%= "/weather/#{weather.dig(:id)}" %> hx-target="closest tr" hx-swap="outerHTML swap:1s">
+          <a class="cursor-pointer hover:underline text-pink-600 font-semibold p-1 text-xs" hx-delete=<%= "/weather/#{weather.dig(:id)}" %> hx-target="closest tr" hx-swap="outerHTML swap:1s">
             x
           </a>
-        </td>
+    </td>
       </tr>
     <% end %>    
   </tbody>
 </table>
 
-<% if @weather_filtered == 0 %>
+<% if weather_filter == 0 %>
   <span hx-post="/weather/refresh" hx-target="#weather-table" hx-trigger="every 60s"/>
 <% end %>

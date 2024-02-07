@@ -1,14 +1,14 @@
 <div id='map' style='width: 100%; position: absolute; top: 150px; bottom: 0; left: 0; right: 0;'></div>
 <script>
-    mapboxgl.accessToken = "<%= @mapbox_token %>"
+    mapboxgl.accessToken = "<%= mapbox_token %>"
 
-    var city_name = "<%= @city.name %>"
-    var city_lon = parseFloat("<%= @city.lon %>")
-    var city_lat = parseFloat("<%= @city.lat %>")
-    var bbox_lat_min = parseFloat("<%= @city.lat_min %>")
-    var bbox_lat_max = parseFloat("<%= @city.lat_max %>")
-    var bbox_lon_min = parseFloat("<%= @city.lon_min %>")
-    var bbox_lon_max = parseFloat("<%= @city.lon_max %>")
+    var city_name = "<%= city.name %>"
+    var city_lon = parseFloat("<%= city.lon %>")
+    var city_lat = parseFloat("<%= city.lat %>")
+    var bbox_lat_min = parseFloat("<%= city.lat_min %>")
+    var bbox_lat_max = parseFloat("<%= city.lat_max %>")
+    var bbox_lon_min = parseFloat("<%= city.lon_min %>")
+    var bbox_lon_max = parseFloat("<%= city.lon_max %>")
 
     console.log(city_name, city_lon, city_lat, "bbox", bbox_lon_min, bbox_lat_min, bbox_lon_max, bbox_lat_max)
 

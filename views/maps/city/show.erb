@@ -10,8 +10,8 @@
 </div>
 
 <div id="city-map">
-    <% if @city %>
-        <%= render "maps/city/show_map" %>
+    <% if city %>
+        <%= render "maps/city/show_map", locals: {city: city, mapbox_token: mapbox_token} %>
     <% end %>
 </div>
 

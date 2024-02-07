@@ -1,6 +1,7 @@
 # boot app
 
 require "./boot.rb"
+require "./app_api_v1.rb"
 require "./app_maps.rb"
 require "./app_places.rb"
 require "./app_ticker.rb"
@@ -25,7 +26,6 @@ class App < Roda
   plugin :json, serializer: ::Oj.method(:dump)
   plugin :json_parser, parser: ::Oj.method(:load)
   plugin :request_headers
-  plugin :render
   plugin :sessions, secret: ENV["APP_SECRET"]
 
   before do
@@ -45,9 +45,9 @@ class App < Roda
   end
 
   route do |r|
-    @app_version = ENV["APP_VERSION"] || ENV["RACK_ENV"]
-    @app_ws_uri = ENV["APP_WS_URI"]
+    app_version = ENV["APP_VERSION"] || ENV["RACK_ENV"]
 
+    # graphql app
     r.post "graphql" do
       env[:api_name] = "gql"
 
@@ -95,71 +95,25 @@ class App < Roda
       env[:api_name] = "version"
 
       {
-        "version": @app_version
+        "version": app_version
       }
     end
 
-    # api
     r.on "api/v1" do
-      r.on "auth" do
-        r.post "pki" do # POST /api/v1/auth/pki
-          env[:api_name] = "auth_pki"
-
-          ::Api::V1::Auth::Pki.new(request: request, response: response).call
-        end
-      end
-
-      r.on "maps" do
-        r.get "tileset" do # GET /api/v1/maps/tileset?lat=x&lon=y
-          env[:api_name] = "tileset_get"
-
-          ::Api::V1::Map::Tileset.new(
-            request: request,
-            response: response,
-          ).call
-        end
-      end
-
-      r.on "stocks" do
-        r.on String do |ticker| # POST|PUT /api/v1/stocks/{ticker}?price=50.01
-          env[:api_name] = "stock_add"
-
-          ::Api::V1::Stocks::Update.new(
-            request: request,
-            response: response,
-            ticker: ticker
-          ).call
-        end
-      end
-
-      r.on "weather" do # POST|PUT /api/v1/weather
-        env[:api_name] = "weather_update"
-
-        ::Api::V1::Weather::Update.new(
-          request: request,
-          response: response,
-        ).call
-      end
+      r.run AppApiV1
     end
 
     r.get "me" do # GET /me
-      view("me", layout: "layouts/me")
+      view("me", layout: "layouts/me", locals: {app_version: app_version})
     end
 
     r.on "maps" do
       r.run AppMaps
     end
 
-    r.on "plaid" do # plaid connect
-      r.get "connect" do
-        struct = ::Service::Plaid::Tokens::LinkCreate.new(client_name: "notme", user_id: "sanjay").call
-
-        @text = "Plaid Sandbox"
-        @token = struct.token
-
-        view("plaid/connect", layout: "layouts/plaid")
-      end
-    end
+    # r.on "plaid" do
+    #   r.run AppPlaid
+    # end
 
     r.on "places" do
       r.run AppPlaces

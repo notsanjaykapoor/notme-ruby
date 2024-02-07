@@ -1,11 +1,11 @@
 <div class="container grid grid-cols-12">
   <div class="col-span-12 mt-10">
     <h3 class="font-bold text-center">
-      <%= @text %>
+      <%= app_text %>
     </h3>
   </div>
   <div class="col-start-2 col-span-10 mt-2 opacity-50 text-center text-xs text-zinc-400" id="ws-status">
-    @<%= @app_version %>
+    @<%= app_version %>
   </div>
 </div>
 
@@ -19,5 +19,11 @@
 </div>
 
 <div class="container grid grid-cols-12 py-10" id="weather-table">
-  <%= render "weather/table" %>
+  <%= render "weather/table", locals: {query: query, weather_count: weather_count, weather_filter: weather_filter, weather_list: weather_list} %>
 </div>
+
+<script>
+  document.body.addEventListener('weather-count-changed', function(event) {
+    console.log("event weather-count-changed")
+  });
+</script>

@@ -11,7 +11,10 @@ class AppPlaces < Roda
     r.session["mapbox_session"] ||= ULID.generate()
     mapbox_session = r.session["mapbox_session"]
 
-    r.get "search" do # GET /places/search?q=chicago
+    app_version = ENV["APP_VERSION"] || ENV["RACK_ENV"]
+
+    # GET /places/search?q=chicago
+    r.get "search" do
       query = r.params["q"].to_s
       query = ::Service::Database::Query.normalize(query: query, default_field: "name", default_match: "like")
 
@@ -28,16 +31,21 @@ class AppPlaces < Roda
       render("places/list/table", locals: {places_count: places_count, places_list: places_list, query: query})
     end
 
-    # POST /places/add?mapbox_id=xxx
-    r.post "add" do
+    # POST /places/mapbox/add?id=xxx
+    r.post "mapbox/add" do
       # todo
-      mapbox_id = r.params["mapbox_id"].to_s
+      mapbox_id = r.params["id"].to_s
       create_result = ::Service::Places::CreateFrom.new(mapbox_id: mapbox_id, mapbox_session: mapbox_session).call
 
-      puts create_result
+      if create_result.code != 0
+        # todo
+      end
+
+      return render("places/mapbox/add_ok")
     end
 
-    r.get "add/query" do # GET /places/add/query?q=food+near:chicago
+    # GET /places/mapbox/query?q=food+near:chicago
+    r.get "mapbox/query" do
       mapbox_query = r.params["q"].to_s
 
       # extract location from query
@@ -45,7 +53,7 @@ class AppPlaces < Roda
 
       if not match_query
         @error = "invalid search"
-        return render("places/add/error")
+        return render("places/mapbox/add_error")
       end
 
       _, city_query = match_query[2].split(":")
@@ -54,29 +62,29 @@ class AppPlaces < Roda
 
       if resolve_result.code != 0
         @error = "invalid location"
-        return render("places/add/error")
+        return render("places/mapbox/add_error")
       end
 
       city = resolve_result.city
       query = match_query[1]
 
-      # search_result = ::Service::Mapbox::Search.new(city: city, query: query, limit: 10, session: mapbox_session).call
-      # mapbox_list = search_result.data
+      search_result = ::Service::Mapbox::Search.new(city: city, query: query, limit: 10, session: mapbox_session).call
+      mapbox_list = search_result.data
 
-      mapbox_list = [
-        {
-          "name" => "Au Cheval",
-          "full_address" => "800 W Randolph St",
-          "feature_type" => "poi",
-          "mapbox_id"=>"dXJuOm1ieHBvaTo2YWYzNGVjZi0yNTFjLTRiMDMtYmMwNS01MGE0NDk0ZDkwMzg",
-        },
-        {
-          "name" => "Random Spot",
-          "full_address" => "801 W Randolph St",
-          "feature_type" => "poi",
-          "mapbox_id"=>"dXJuOm1ieHBvaTo2YWYzNGVjZi0yNTFjLTRiMDMtYmMwNS01MGE0NDk0ZDkwMxx",
-        },
-      ]
+      # mapbox_list = [
+      #   {
+      #     "name" => "Au Cheval",
+      #     "full_address" => "800 W Randolph St",
+      #     "feature_type" => "poi",
+      #     "mapbox_id"=>"dXJuOm1ieHBvaTo2YWYzNGVjZi0yNTFjLTRiMDMtYmMwNS01MGE0NDk0ZDkwMzg",
+      #   },
+      #   {
+      #     "name" => "Random Spot",
+      #     "full_address" => "801 W Randolph St",
+      #     "feature_type" => "poi",
+      #     "mapbox_id"=>"dXJuOm1ieHBvaTo2YWYzNGVjZi0yNTFjLTRiMDMtYmMwNS01MGE0NDk0ZDkwMxx",
+      #   },
+      # ]
 
       mapbox_list.each_with_index do |data, index|
         puts index+1
@@ -86,16 +94,18 @@ class AppPlaces < Roda
 
       mapbox_ids = ::Model::Place.select(:source_id).all.map{ |o| o.source_id }.to_set
 
-      render("places/add/table", locals: {mapbox_ids: mapbox_ids, mapbox_list: mapbox_list})
+      render("places/mapbox/table", locals: {mapbox_ids: mapbox_ids, mapbox_list: mapbox_list})
     end
 
-    r.get "add" do # GET /places/add
+    # GET /places/mapbox
+    r.get "mapbox" do
       text = "Mapbox Search"
 
-      view("places/add/index", layout: "layouts/app", locals: {app_version: @app_version, text: text})
+      view("places/mapbox/index", layout: "layouts/app", locals: {app_version: app_version, text: text})
     end
 
-    r.get do # GET /places
+    # GET /places
+    r.get do
       app_name = "Places"
       query = ""
 
@@ -111,7 +121,7 @@ class AppPlaces < Roda
       view(
         "places/list/index", 
         layout: "layouts/app",
-        locals: {app_name: app_name, app_version: @app_version, places_count: places_count, places_list: places_list, query: query},
+        locals: {app_name: app_name, app_version: app_version, places_count: places_count, places_list: places_list, query: query},
       )
     end
   end

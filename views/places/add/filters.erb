@@ -1,7 +1,0 @@
-<div class="col-start-2 col-span-2 font-bold text-sm">
-  <input type="search" name="city" placeholder="city" value="<%= @city.name %>" autocomplete="off" hx-get="/places/add/filter" hx-target="#places-add-filters" hx-trigger="input changed delay:500ms, search" class="peer px-0 mx-4 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans text-sm font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-pink-600 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50 required:border-red-500">
-</div>
-
-<div class="col-start-5 col-span-2 font-bold text-sm">
-  <input type="search" name="name" placeholder="name" value="" autocomplete="off" hx-get="/places/add/search?city=<%= @city.id %>" hx-target="#places-table" hx-trigger="input changed delay:500ms, search" class="peer px-0 mx-4 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans text-sm font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-pink-600 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50 required:border-red-500">
-</div>

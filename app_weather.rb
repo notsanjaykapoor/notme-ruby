@@ -8,9 +8,11 @@ class AppWeather < Roda
   plugin :sessions, secret: ENV["APP_SECRET"]
 
   route do |r|
+    app_version = ENV["APP_VERSION"] || ENV["RACK_ENV"]
     @weather_max = (ENV["APP_WEATHER_MAX"] || APP_WEATHER_MAX_DEFAULT).to_i
 
-    r.post "add" do # POST /weather/add
+    # POST /weather/add
+    r.post "add" do
       if ::Model::Weather.count() >= @weather_max
         response.status = 429
         return r.halt(429)
@@ -31,21 +33,23 @@ class AppWeather < Roda
         ).call
       end
 
+      query = ""
+
       struct_list = ::Service::Weather::Search.new(
-        query: "",
+        query: query,
         offset: 0,
         limit: 50,
       ).call
 
-      @weather_list = struct_list.objects
-      @weather_count = @weather_list.length
-      @weather_filtered = 0
+      weather_list = struct_list.objects
+      weather_count = weather_list.length
 
       # render without layout
-      render("weather/table")
+      render("weather/table", locals: {query: query, weather_count: weather_count, weather_filter: 0, weather_list: weather_list})
     end
 
-    r.post "search" do # POST /weather/search
+    # POST /weather/search
+    r.post "search" do
       query_raw = r.params["q"]
       query = "name:~#{query_raw}"
 
@@ -55,69 +59,87 @@ class AppWeather < Roda
         limit: 50,
       ).call
 
-      @weather_list = struct_list.objects
-      @weather_count = @weather_list.length
+      weather_list = struct_list.objects
+      weather_count = weather_list.length
 
       if query_raw != ""
-        @weather_filtered = 1
+        weather_filter = 1
       else
-        @weather_filtered = 0
+        weather_filter = 0
       end
 
       # render without layout
-      render("weather/table")
+      render("weather/table", locals: {query: query, weather_count: weather_count, weather_filter: weather_filter, weather_list: weather_list})
     end
 
-    r.get "count" do # GET /weather/count
-      @weather_count = ::Model::Weather.count()
+    # GET /weather/count
+    r.get "count" do
+      weather_count = ::Model::Weather.count()
 
       # render without layout
       render("weather/count")
     end
 
-    r.get do # GET /weather
+    # GET /weather
+    r.get do
+      app_text = "Weather"
+      query = ""
+
       search_result = ::Service::Weather::Search.new(
-        query: "",
+        query: query,
         offset: 0,
         limit: 50,
       ).call
 
-      @weather_list = search_result.objects
-      @weather_count = @weather_list.length
-      @weather_filtered = 0
-      @text = "Weather"
+      weather_list = search_result.objects
+      weather_count = weather_list.length
 
-      view("weather/list", layout: "layouts/app")
+      view(
+        "weather/list",
+        layout: "layouts/app",
+        locals: {
+          app_text: app_text,
+          app_version: app_version,
+          query: query,
+          weather_count: weather_count,
+          weather_filter: 0,
+          weather_list: weather_list,
+        },
+      )
     end
 
-    r.delete Integer do |id| # delete weather/:id
+    # DELETE weather/:id
+    r.delete Integer do |id|
       weather = ::Model::Weather.first(id: id)
 
       if weather
         weather.delete
+
         # set response trigger event
-        response.headers["HX-Trigger"] = "weatherCountChanged"
+        response.headers["HX-Trigger"] = "weather-count-changed"
       end
 
-      view("weather/delete", layout: "layouts/app")
+      render("weather/delete")
     end
 
-    r.post "refresh" do # POST /weather/refresh
+    # POST /weather/refresh
+    r.post "refresh" do
+      query = ""
       search_result = ::Service::Weather::Search.new(
-        query: "",
+        query: query,
         offset: 0,
         limit: 50,
       ).call
 
-      @weather_list = search_result.objects
-      @weather_count = @weather_list.length
-      @weather_filtered = 0
+      weather_list = search_result.objects
+      weather_count = weather_list.length
 
       # render without layout
-      render("weather/table")
+      render("weather/table", locals: {query: query, weather_count: weather_count, weather_filter: 0, weather_list: weather_list})
     end
 
-    r.post Integer do |id| # POST weather/:id
+    # POST weather/:id
+    r.post Integer do |id|
       weather = ::Model::Weather.first(id: id)
 
       if not weather
@@ -125,31 +147,30 @@ class AppWeather < Roda
         return r.halt(404)
       end
 
-      # get weather
+      # get weather and update db
 
       get_result = ::Services::Weather::Api::Get.new(
-        query: city.name
+        query: weather.name
       ).call
 
       if get_result.code == 0
-        # update city with weather data
         ::Service::Weather::Update.new(
-          object: struct_get.data
+          object: get_result.data
         ).call
       end
 
+      query = ""
       struct_list = ::Service::Weather::Search.new(
-        query: "",
+        query: query,
         offset: 0,
         limit: 50,
       ).call
 
-      @weather_list = struct_list.objects
-      @weather_count = @weather_list.length
-      @weather_filtered = 0
+      weather_list = struct_list.objects
+      weather_count = weather_list.length
 
       # render without layout
-      render("weather/table")
+      render("weather/table", locals: {query: query, weather_count: weather_count, weather_filter: 0, weather_list: weather_list})
     end
   end
 end

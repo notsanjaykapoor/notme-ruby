@@ -20,6 +20,7 @@ class AppTicker < Roda
     end
 
     r.get do # GET /ticker
+      @app_ws_uri = ENV["APP_WS_URI"]
       @symbols = (r.params["q"] || "").split(",").map{ |s| s.strip.upcase }.sort
       @stocks = {}
       @text = "Ticker"
