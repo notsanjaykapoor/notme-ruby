@@ -36,7 +36,7 @@ class AppPlaces < Roda
       render("places/list/table", locals: {places_count: places_count, places_list: places_list, query: query})
     end
 
-    # POST /places/add?mapbox_id=xxx, htmx
+    # POST /places/add?mapbox_id=xxx - htmx
     r.post "add" do
       mapbox_id = r.params["mapbox_id"].to_s
       create_result = ::Service::Places::CreateFrom.new(mapbox_id: mapbox_id, mapbox_session: mapbox_session).call
@@ -48,7 +48,7 @@ class AppPlaces < Roda
       return render("places/mapbox/add_ok")
     end
 
-    # GET /places/mapbox/query?q=food+near:chicago, htmx
+    # GET /places/mapbox/query?q=food+near:chicago - htmx
     r.get "mapbox/query" do
       mapbox_query = r.params["q"].to_s
 

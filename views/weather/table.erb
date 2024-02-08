@@ -32,7 +32,7 @@
           <% elsif seconds_ago < (60 * 60 * 12) %>
             <%= seconds_ago / (60 * 60) %> hours ago
           <% else %>
-            <a class="cursor-pointer hover:underline text-blue-800 font-semibold" hx-post=<%= "/weather/#{weather.dig(:id)}" %> hx-target="#weather-table">
+            <a class="cursor-pointer hover:underline text-blue-800 font-semibold" hx-put=<%= "/weather/#{weather.dig(:id)}" %> hx-target="#weather-table">
               <%= seconds_ago / (60 * 60) %> hours ago
             </a>
           <% end %>
