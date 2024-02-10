@@ -29,8 +29,6 @@ class CityResolveTest < Minitest::Test
       limit: 10,
     ).call
 
-    binding.break #
-
     # should create city
     assert_equal 0, resolve_result.code
     assert_equal "Munich", resolve_result.city.name
