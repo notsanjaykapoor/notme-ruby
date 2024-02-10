@@ -24,8 +24,13 @@ module Service
           return struct
         end
 
+        if not (match_result = @query.match(/^name:\~?([a-zA-Z\s]+)/))
+          struct.code = 422
+          return struct
+        end
+
         # geocode city
-        geocode_result = Geocoder.search(@name)
+        geocode_result = Geocoder.search(match_result[1])
 
         if geocode_result.length == 0
           struct.code = 404
