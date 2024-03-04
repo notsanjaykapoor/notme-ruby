@@ -1,0 +1,88 @@
+#!/usr/bin/env ruby
+
+
+require "csv"
+require "optparse"
+
+require "./boot.rb"
+
+options = {
+  delete: 0,
+  query: nil,
+}
+
+parser = OptionParser.new do |opts|
+  opts.on('--delete', "delete all nodes") do |s|
+    options[:delete] = 1
+  end
+
+  opts.on('--query query', "graph search query") do |s|
+    options[:query] = s
+  end
+end
+
+parser.parse!
+
+::Service::Neo::session do |session|
+  if options[:delete] == 1
+    Console.logger.info("neo", "nodes delete")
+    ::Service::Neo.delete_all(session: session)
+  end
+
+  Console.logger.info("neo", "nodes create")
+
+  created_count = 0
+
+  ::Model::City.all do |city|
+    code = ::Service::City::Neo.node_create(session: session, city: city)
+    if code == 0
+      created_count += 1
+    end
+    Console.logger.info("neo", "node #{city.name} #{code}")
+  end
+
+  Console.logger.info("neo", "nodes created #{created_count}")
+
+  Console.logger.info("neo", "trains create")
+
+  CSV.foreach("data/trains.csv", headers: true) do |row|
+    next if not row["src"]
+    city_src_name = row["src"].titleize
+    city_dst_name = row["dst"].titleize
+
+    city_src = ::Model::City.find(name: city_src_name)
+    city_dst = ::Model::City.find(name: city_dst_name)
+
+    if not city_src
+      resolve_result = ::Service::City::Resolve.new(query: "name:#{city_src_name}", offset: 0, limit: 1).call
+      city_src = resolve_result.city
+      Console.logger.info("neo", "city created #{city_src_name}")
+    end
+
+    if not city_dst
+      resolve_result = ::Service::City::Resolve.new(query: "name:#{city_dst_name}", offset: 0, limit: 1).call
+      city_dst = resolve_result.city
+      Console.logger.info("neo", "city created #{city_dst_name}")
+    end
+
+    code = ::Service::City::Neo.train_create(
+      session: session,
+      city_src: city_src,
+      city_dst: city_dst,
+      duration: row["duration"],
+    )
+  end
+
+  if query = options[:query]
+    search_results = ::Service::City::Neo.search(session: session, query: query)
+    # search_results = ::Service::City::Neo.search(session: session, query: "path:florence:munich:2")
+    # search_results = ::Service::City::Neo.search(session: session, query: "path:munich:florence:4")
+
+    search_results.paths.map.with_index do |path_object, path_i|
+      print("path #{path_i+1} #{path_object[:src_name]}:#{path_object[:dst_name]} duration #{path_object[:path_duration]} - #{path_object[:path_name]}")
+      print("\r\n")
+    end
+
+    # search_results = ::Service::City::Neo.search(session: session, query: "shortest:munich:florence")
+  end
+end

@@ -14,6 +14,7 @@ gem "falcon"
 gem "geocoder", require: false
 gem "graphql", require: false
 gem "http", require: false
+gem "neo4j-ruby-driver", require: false
 gem "oj", require: false
 gem "openssl", require: false
 gem "opentelemetry-exporter-otlp", "~> 0.26.1"

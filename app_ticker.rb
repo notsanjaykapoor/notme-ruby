@@ -8,18 +8,22 @@ class AppTicker < Roda
   plugin :sessions, secret: ENV["APP_SECRET"]
 
   route do |r|
+    htmx_request = r.headers["HX-Request"] ? 1 : 0
+
     symbols_session = Set.new((r.session["symbols"] || "").split(",").map{ |s| s.strip.upcase })
     symbols_expire_session = (r.session["symbols_expire"] || Time.now.utc.to_i + (60 * 3)).to_i
 
     ticker_max = (ENV["APP_TICKERMAX"] || APP_TICKER_MAX_DEFAULT).to_i
 
-    r.get "reset" do # GET /ticker/reset
+    # GET /ticker/reset - html
+    r.get "reset" do
       r.session.delete("symbols_expire")
 
       r.redirect("/ticker")
     end
 
-    r.get do # GET /ticker
+    # GET /ticker - html
+    r.get do
       @app_ws_uri = ENV["APP_WS_URI"]
       @symbols = (r.params["q"] || "").split(",").map{ |s| s.strip.upcase }.sort
       @stocks = {}
@@ -36,7 +40,8 @@ class AppTicker < Roda
       view("ticker/index", layout: "layouts/app")
     end
 
-    r.post "add" do # POST /ticker/add
+    # POST /ticker/add - htmx
+    r.post "add" do
       add = Set.new([(r.params["q"] || "").upcase])
 
       if symbols_session.size < ticker_max
@@ -66,7 +71,8 @@ class AppTicker < Roda
       render("ticker/symbols")
     end
 
-    r.put "del" do # GET /ticker/del
+    # GET /ticker/del - htmx
+    r.put "del" do
       del = Set.new([(r.params["q"] || "").upcase])
       @symbols = symbols_session - del
       @symbols = @symbols.sort

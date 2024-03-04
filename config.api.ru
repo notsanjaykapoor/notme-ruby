@@ -2,6 +2,7 @@
 
 require "./boot.rb"
 require "./app_api_v1.rb"
+require "./app_graph.rb"
 require "./app_maps.rb"
 require "./app_places.rb"
 require "./app_ticker.rb"
@@ -101,6 +102,10 @@ class App < Roda
 
     r.on "api/v1" do
       r.run AppApiV1
+    end
+
+    r.on "graph" do
+      r.run AppGraph
     end
 
     r.get "me" do # GET /me
