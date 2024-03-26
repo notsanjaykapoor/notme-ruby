@@ -28,7 +28,14 @@ class TraceMiddleware
   end
 
   def call(env)
-    path_name = env["REQUEST_PATH"].tr("/", "_")
+    path = env["REQUEST_PATH"].to_s
+
+    if path
+      path_name = path.tr("/", "_")
+    else
+      path_name = "_na"
+    end
+
     span_name = "app#{path_name}"
 
     AppTracer.in_span(span_name) do |span|

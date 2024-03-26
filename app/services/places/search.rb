@@ -57,7 +57,9 @@ module Service
               # find city
               city = ::Model::City.where(Sequel.lit("lower(name) like ?", "#{value}%")).first
               if not city
-                raise ArgumentError, "city invalid"
+                struct.code = 422
+                struct.errors.push("city invalid")
+                return struct
               end
               # make point from db geo fields and box using city's bounding box values
               query = query.where(
@@ -67,16 +69,12 @@ module Service
               values = value.split(",").map{ |s| s.to_s.strip.downcase }
               query = query.tagged_with_any(values)
             else
-                raise ArgumentError, "field #{field} invalid"
+                struct.code = 422
+                return struct
             end
           end
 
           struct.places = query.order(Sequel.asc(:name)).offset(@offset).limit(@limit).all
-        rescue ArgumentError => e
-          struct.code = 422
-          struct.errors.push(e.message)
-
-          Console.logger.failure(self, e)
         rescue StandardError => e
           struct.code = 500
           struct.errors.push(e.message)
