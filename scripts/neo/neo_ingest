@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 
-
 require "csv"
 require "optparse"
 
@@ -31,17 +30,20 @@ parser.parse!
 
   Console.logger.info("neo", "nodes create")
 
-  created_count = 0
+  cities_created = 0
+  trains_created = 0
 
   ::Model::City.all do |city|
     code = ::Service::City::Neo.node_create(session: session, city: city)
+
     if code == 0
-      created_count += 1
+      cities_created += 1
+
+      Console.logger.info("neo", "node #{city.name} created")
     end
-    Console.logger.info("neo", "node #{city.name} #{code}")
   end
 
-  Console.logger.info("neo", "nodes created #{created_count}")
+  Console.logger.info("neo", "nodes created #{cities_created}")
 
   Console.logger.info("neo", "trains create")
 
@@ -71,6 +73,8 @@ parser.parse!
       city_dst: city_dst,
       duration: row["duration"],
     )
+
+    # Console.logger.info("neo", "train create #{code}")
   end
 
   if query = options[:query]

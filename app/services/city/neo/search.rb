@@ -24,7 +24,7 @@ module Service
             )
           end
 
-          Console.logger.info(self, "#{city_src.name} to anywhere depth #{max_depth} query")
+          Console.logger.info(self, "#{Thread.current[:rid]} #{city_src.name} to anywhere depth #{max_depth} query")
 
           records = ::Service::City::Neo.path_bfs(
             session: session,
@@ -34,7 +34,7 @@ module Service
 
           result = _search_nodes_filter(records: records, city_src: city_src)
 
-          Console.logger.info(self, "#{city_src.name} to anywhere depth #{max_depth} result - paths #{result.paths.length}, dropped #{result.paths_dropped}")
+          Console.logger.info(self, "#{Thread.current[:rid]} #{city_src.name} to anywhere depth #{max_depth} result - paths #{result.paths.length}, dropped #{result.paths_dropped}")
 
           result
         elsif match = query.to_s.match(/^paths?:([a-zA-z\s]+):([a-zA-z\s]+)(:\d+)?/)
@@ -58,7 +58,7 @@ module Service
             )
           end
 
-          Console.logger.info(self, "#{city_src.name} to #{city_dst.name} depth #{max_depth} query")
+          Console.logger.info(self, "#{Thread.current[:rid]} #{city_src.name} to #{city_dst.name} depth #{max_depth} query")
 
           records = ::Service::City::Neo.paths_all(
             session: session,
@@ -69,7 +69,7 @@ module Service
         
           result = _search_paths_filter(records: records, city_src: city_src, city_dst: city_dst)
 
-          Console.logger.info(self, "#{city_src.name} to #{city_dst.name} depth #{max_depth} result - paths #{result.paths.length}, dropped #{result.paths_dropped}")
+          Console.logger.info(self, "#{Thread.current[:rid]} #{city_src.name} to #{city_dst.name} depth #{max_depth} result - paths #{result.paths.length}, dropped #{result.paths_dropped}")
 
           result
         elsif match = query.to_s.match(/^shortest:([a-zA-z\s]+):([a-zA-z\s]+)/)
@@ -78,7 +78,7 @@ module Service
           city_src = ::Model::City.find(name: match[1].titleize)
           city_dst = ::Model::City.find(name: match[2].titleize)
 
-          Console.logger.info(self, "#{city_src.name} to #{city_dst.name} shortest path query")
+          Console.logger.info(self, "#{Thread.current[:rid]} #{city_src.name} to #{city_dst.name} shortest path query")
 
           result = Struct::PathShortest.new(
             code: 0,
@@ -102,7 +102,7 @@ module Service
           result.path_duration = record["duration"]
           result.path_name = ""
 
-          Console.logger.info(self, "#{city_src.name} to #{city_dst.name} shortest path result - duration #{result.path_duration}")
+          Console.logger.info(self, "#{Thread.current[:rid]} #{city_src.name} to #{city_dst.name} shortest path result - duration #{result.path_duration}")
 
           result
         end

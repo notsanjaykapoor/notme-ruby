@@ -21,6 +21,23 @@ use Rack::Cors do
   end
 end
 
+class TraceMiddleware
+
+  def initialize(app)
+    @app = app
+  end
+
+  def call(env)
+    path_name = env["REQUEST_PATH"].tr("/", "_")
+    span_name = "app#{path_name}"
+
+    AppTracer.in_span(span_name) do |span|
+      @app.call(env)
+    end
+  end
+
+end
+
 class App < Roda
   plugin :all_verbs
   plugin :hooks
@@ -29,8 +46,10 @@ class App < Roda
   plugin :request_headers
   plugin :sessions, secret: ENV["APP_SECRET"]
 
+  use ::TraceMiddleware
+
   before do
-    env[:start] = ::Async::Clock.now
+    env[:time_start] = ::Async::Clock.now
 
     Thread.current[:rid] = ULID.generate()
 
@@ -40,7 +59,8 @@ class App < Roda
   end
 
   after do |rack_code, rack_object|
-    time_ms = ((::Async::Clock.now - env[:start])*1000).round(3)
+    env[:time_end] = ::Async::Clock.now
+    time_ms = ((env[:time_end] - env[:time_start])*1000).round(3)
 
     Console.logger.info("Rack", "#{Thread.current[:rid]} #{request.request_method.downcase} #{request.path} #{rack_code} #{time_ms}ms")
   end
@@ -53,7 +73,6 @@ class App < Roda
       env[:api_name] = "gql"
 
       gql_context = {}
-
       gql_params = request.params
 
       gql_result = GqlSchema.execute(
@@ -108,12 +127,12 @@ class App < Roda
       r.run AppGraph
     end
 
-    r.get "me" do # GET /me
-      view("me", layout: "layouts/me", locals: {app_version: app_version})
-    end
-
     r.on "maps" do
       r.run AppMaps
+    end
+
+    r.get "me" do # GET /me
+      view("me", layout: "layouts/me", locals: {app_version: app_version})
     end
 
     # r.on "plaid" do

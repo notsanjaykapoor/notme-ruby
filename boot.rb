@@ -45,9 +45,13 @@ Console.logger.info("Boot", "opentelemetry")
 
 OpenTelemetry::SDK.configure do |c|
   c.use "OpenTelemetry::Instrumentation::GraphQL"
+  c.use "OpenTelemetry::Instrumentation::Net::HTTP"
+  c.use "OpenTelemetry::Instrumentation::PG"
   c.use "OpenTelemetry::Instrumentation::Rack"
-  # c.use_all() # enables all trace instrumentation!
+  # c.use_all() # enables all trace instrumentation, can't be used with c.use statement
 end
+
+AppTracer = OpenTelemetry.tracer_provider.tracer("app")
 
 # load app files
 

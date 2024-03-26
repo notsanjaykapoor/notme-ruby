@@ -10,13 +10,21 @@ class AppGraph < Roda
   route do |r|
     app_name = "Graph"
     app_version = ENV["APP_VERSION"] || ENV["RACK_ENV"]
+    current_span = OpenTelemetry::Trace.current_span
     htmx_request = r.headers["HX-Request"] ? 1 : 0
 
     # GET /graph - html or htmx
     r.get do
       query_raw = r.params["q"].to_s
 
-      Console.logger.info(self, "query '#{query_raw}'")
+      current_span.add_attributes({
+        "app.htmx" => htmx_request,
+        "app.request_id" => Thread.current[:rid],
+        "app.query" => query_raw,
+        "app.version" => app_version,
+      })
+
+      Console.logger.info(self, "#{Thread.current[:rid]} query '#{query_raw}'")
 
       ::Service::Neo::session do |session|
         if query_raw.match(/^(city|country):/) or not query_raw.match(/:/)
