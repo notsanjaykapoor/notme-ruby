@@ -24,11 +24,11 @@ parser.parse!
 
 ::Service::Neo::session do |session|
   if options[:delete] == 1
-    Console.logger.info("neo", "nodes delete")
+    Console.logger.info("trains", "nodes delete")
     ::Service::Neo.delete_all(session: session)
   end
 
-  Console.logger.info("neo", "nodes create")
+  Console.logger.info("trains", "nodes create")
 
   cities_created = 0
   trains_created = 0
@@ -39,13 +39,13 @@ parser.parse!
     if code == 0
       cities_created += 1
 
-      Console.logger.info("neo", "node #{city.name} created")
+      Console.logger.info("trains", "node #{city.name} created")
     end
   end
 
-  Console.logger.info("neo", "nodes created #{cities_created}")
+  Console.logger.info("trains", "nodes created #{cities_created}")
 
-  Console.logger.info("neo", "trains create")
+  Console.logger.info("trains", "trains create")
 
   CSV.foreach("data/trains.csv", headers: true) do |row|
     next if not row["src"]
@@ -58,13 +58,13 @@ parser.parse!
     if not city_src
       resolve_result = ::Service::City::Resolve.new(query: "name:#{city_src_name}", offset: 0, limit: 1).call
       city_src = resolve_result.city
-      Console.logger.info("neo", "city created #{city_src_name}")
+      Console.logger.info("trains", "city created #{city_src_name}")
     end
 
     if not city_dst
       resolve_result = ::Service::City::Resolve.new(query: "name:#{city_dst_name}", offset: 0, limit: 1).call
       city_dst = resolve_result.city
-      Console.logger.info("neo", "city created #{city_dst_name}")
+      Console.logger.info("trains", "city created #{city_dst_name}")
     end
 
     code = ::Service::City::Neo.train_create(

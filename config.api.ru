@@ -21,6 +21,8 @@ use Rack::Cors do
   end
 end
 
+use Rack::Static
+
 class TraceMiddleware
 
   def initialize(app)

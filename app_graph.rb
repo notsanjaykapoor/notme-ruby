@@ -38,22 +38,29 @@ class AppGraph < Roda
           search_results = ::Service::City::Neo.search(session: session, query: query_raw)
           paths = search_results.paths
         else
-          # default
+          # default view
           table = "cities"
           cities = []
+          paths = []
         end
 
         if htmx_request == 1
+          # update browser history
+          response.headers["HX-Push-Url"] = "/graph?q=#{query_raw}"
+
+          # render partial view
           if table == "cities"
             render("graph/cities/table", locals: {cities: cities, query: query_raw})
           elsif table == "paths"
             render("graph/paths/table", locals: {paths: paths, query: query_raw})
           end
         else
+          # render full view
           view("graph/cities/index", layout: "layouts/app", locals: {
             app_name: app_name,
             app_version: app_version,
             cities: cities,
+            paths: paths,
             query: query_raw,
             table: table,
           })

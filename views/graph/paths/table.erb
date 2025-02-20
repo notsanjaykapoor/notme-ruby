@@ -2,23 +2,22 @@
   query '<%= query %>' : results <%= paths.length %>
 </div>
 
-<table class="col-start-2 col-span-10">
-  <thead class="font-normal text-left text-[0.8125rem] leading-6 text-zinc-800">
+<table class="col-start-2 col-span-10 mt-10">
+  <thead class="font-normal text-center text-xs leading-6 text-zinc-800">
     <tr>
-      <th class="p-4 pr-6">source</th>
-      <th class="p-4 pr-6">destination</th>
-      <th class="p-4 pr-6">duration</th>
-      <th class="p-4 pr-6">route</th>
-      <th class="p-4 pr-6"></th>
+      <th class="p-4">source</th>
+      <th class="p-4">destination</th>
+      <th class="p-4">duration</th>
+      <th class="p-4 text-left">route</th>
     </tr>
   </thead>
   <tbody>
     <% paths.each do |path_object| %>
-      <tr class="group hover:bg-zinc-50 odd:bg-white even:bg-slate-50 text-sm">
-        <td class="p-4 pr-6 font-normal"><%= path_object[:src_name] %></td>
-        <td class="p-4 pr-6 font-normal"><%= path_object[:dst_name] %></td>
-        <td class="p-4 pr-6 font-normal"><%= path_object[:path_duration] %></td>
-        <td class="p-4 pr-6 font-normal"><%= path_object[:path_name] %></td>
+      <tr class="group hover:bg-zinc-50 odd:bg-white even:bg-slate-50 text-center text-xs">
+        <td class="p-4 font-normal"><%= path_object[:src_name] %></td>
+        <td class="p-4 font-normal"><%= path_object[:dst_name] %></td>
+        <td class="p-4 font-normal"><%= path_object[:path_duration] %></td>
+        <td class="p-4 font-normal text-left"><%= path_object[:path_name] %></td>
       </tr>
     <% end %>    
   </tbody>

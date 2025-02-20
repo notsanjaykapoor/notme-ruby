@@ -1,5 +1,5 @@
 src,dst,duration
-amsterdam,berlin,6.5
+amsterdam,berlin,6.0
 amsterdam,frankfurt,4.0
 amsterdam,brussels,3.0
 amsterdam,paris,3.5
@@ -8,10 +8,10 @@ barcelona,lyon,5.0
 barcelona,madrid,2.5
 barcelona,valencia,3.0
 berlin,amsterdam,6.5
-berlin,copenhagen,9.5
 berlin,frankfurt,4.0
 berlin,hamburg,2.0
 berlin,munich,4.5
+berlin,paris,8.3
 berlin,prague,4.5
 berlin,warsaw,5.5
 bern,geneva,2.0
@@ -30,6 +30,7 @@ budapest,zagreb,6.5
 cannes,lyon,4.5
 cannes,nice,1.0
 cologne,frankfurt,1.0
+copenhagen,hamburg,4.7
 copenhagen,stockholm,5.3
 florence,milan,1.5
 florence,munich,11.0

@@ -10,12 +10,12 @@
 </div>
 
 <div class="container grid grid-cols-12 mt-10">
-  <div class="col-start-2 col-span-5 font-bold text-sm">
-    <input type="search" name="q" placeholder="search - e.g. city:zur, country:fra, nodes:munich:2, paths:prague:paris:4" autocomplete="off" hx-get="/graph" hx-target="#graph-table" hx-trigger="search" class="peer px-0 mx-4 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans text-sm font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-indigo-500 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50">
+  <div class="col-start-2 col-span-5 font-bold text-xs">
+    <input type="search" name="q" value="<%= query %>" placeholder="search - e.g. city:zur, country:fra, nodes:munich:2, paths:prague:paris:4" autocomplete="off" hx-get="/graph" hx-target="#graph-table" hx-trigger="search" class="peer px-0 mx-4 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-indigo-500 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50">
   </div>
 </div>
 
-<div class="container grid grid-cols-12 my-5" id="graph-table">
+<div class="container grid grid-cols-12 mt-5" id="graph-table">
   <% if table == "cities" %>
     <%= render "graph/cities/table", locals: {cities: cities, query: query} %>
   <% elsif table == "paths" %>

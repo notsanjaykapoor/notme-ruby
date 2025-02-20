@@ -3,8 +3,6 @@
 module Api
   class Ping
 
-    attr_reader :object_id
-
     def initialize(request:, response:)
       @request = request
       @response = response
