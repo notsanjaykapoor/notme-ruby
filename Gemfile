@@ -11,17 +11,21 @@ gem "colorize"
 gem "csv"
 gem "dotenv"
 gem "falcon"
+gem "fiddle", "~> 1.1"
 gem "geocoder", require: false
 gem "graphql", require: false
 gem "http", require: false
+gem "logger", "~> 1.6"
 gem "neo4j-ruby-driver", require: false
 gem "oj", require: false
 gem "openssl", require: false
 gem "opentelemetry-exporter-otlp", "~> 0.26.1"
 gem "opentelemetry-instrumentation-all", "~> 0.56.0"
 gem "opentelemetry-sdk", "~> 1.3"
+gem "ostruct", "~> 0.6.1"
 gem "pg", require: false
 gem "rack-cors", require: false
+gem "rb-fsevent", "~> 0.11.2"
 gem "roda"
 gem "sequel"
 gem "tilt"
