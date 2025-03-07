@@ -17,6 +17,16 @@ module Service
 
         Console.logger.info(self, "#{Thread.current[:rid]} query '#{@query}'")
 
+        if !@query.include?(":")
+          if @query.match(/^\d+$/)
+            # normalize query with id tag
+            @query = "id:#{@query}"
+          else
+            # normalize query with id tag
+            @query = "name:#{@query}"
+          end
+        end
+
         search_result = ::Service::City::Search.new(query: @query, offset: 0, limit: 5).call
 
         if search_result.cities.length > 0
@@ -37,7 +47,16 @@ module Service
           return struct
         end
 
-        update_result = ::Service::City::Update.new(data: geocode_result[0].data).call
+        geocode_data = geocode_result[0].data
+
+        if (geocode_data.dig("addresstype") or "") != "city"
+          struct.code = 422
+          return struct
+        end
+
+        update_result = ::Service::City::Update.new(data: geocode_data).call
+
+        struct.code = update_result.code
         struct.city = update_result.city
 
         struct

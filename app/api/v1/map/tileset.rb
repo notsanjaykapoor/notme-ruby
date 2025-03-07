@@ -10,8 +10,8 @@ module Api
           @response = response
 
           @params = @request.params
-          @city_id = @params["city_id"].to_i
-          @city = @params["city"]
+          @city_id = @params["city_id"].to_s # can be city id or name
+          @query = @params["q"].to_s
           @lat = @params["lat"]
           @lon = @params["lon"]
 
@@ -20,19 +20,22 @@ module Api
 
         def call
           # search places by city name; add support for radius search
-          if @city_id > 0
-            query = "city:#{@city_id}"
+
+          resolve_result = ::Service::City::Resolve.new(query: @city_id, offset: 0, limit: 5).call
+          city = resolve_result.city
+
+          if city
+            search_results = ::Service::Places::Search.new(
+              query: @query,
+              near: city,
+              offset: 0,
+              limit: 100,
+            ).call
+
+            features = search_results.places.map { |place| place.geo_json_compact }
           else
-            query = "city:~#{@city}"
+            features = []
           end
-
-          search_results = ::Service::Places::Search.new(
-            query: query,
-            offset: 0,
-            limit: 100,
-          ).call
-
-          features = search_results.places.map { |place| place.geo_json_compact }
 
           {
             "type"=>"FeatureCollection",

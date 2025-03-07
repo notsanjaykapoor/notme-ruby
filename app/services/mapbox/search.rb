@@ -28,7 +28,7 @@ module Service
       def call
         struct = @struct.new(0, {}, [])
 
-        Console.logger.info(self, "#{Thread.current[:rid]} query '#{@query}'")
+        Console.logger.info(self, "#{Thread.current[:rid]} query '#{@query}' near '#{@city.name}'")
 
         begin
           params = {

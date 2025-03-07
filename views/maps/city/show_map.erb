@@ -1,4 +1,15 @@
-<div id='map' style='width: 100%; position: absolute; top: 150px; bottom: 0; left: 0; right: 0;'></div>
+<div class="flex flex-row mt-7 mx-5">
+    <div class="w-12/12">
+        <% tags_list.each do |tag| %>
+            <a href="<%= request_path %>?q=tags:<%= tag %>">
+                <button class="rounded-full text-xs font-bold text-white bg-orange-600 py-1 px-2"><%= tag %></button>
+            </a>
+        <% end %>
+    </div>
+</div>
+
+
+<div id='map' style='width: 100%; position: absolute; top: 200px; bottom: 0; left: 0; right: 0;'></div>
 
 <span id="test" hx-get="/maps/city/<%= city.id %>/count" hx-trigger="map-changed from:body"/>
 
@@ -7,6 +18,7 @@
 
     var city_id = "<%= city.id %>"
     var city_name = "<%= city.name %>"
+    var city_query = "<%= query %>"
     var city_lon = parseFloat("<%= city.lon %>")
     var city_lat = parseFloat("<%= city.lat %>")
     var bbox_lat_min = parseFloat("<%= city.lat_min %>")
@@ -22,6 +34,10 @@
         style: 'mapbox://styles/mapbox/light-v11', // style URL
         zoom: 10, // starting zoom
     })
+
+    function place_name_show(s) {
+        document.getElementById('place-name').innerHTML = s
+    }
 
     map.on('load', async () => {
         const geocoder = new MapboxGeocoder({
@@ -106,9 +122,10 @@
             }
         })
 
-        const ts_uri = `http://localhost:3030/api/v1/maps/tileset?city_id=${city_id}&lat=${city_lat}&lon=${city_lon}`
+        const ts_uri = `http://localhost:5001/api/v1/maps/tileset?city_id=${city_id}&lat=${city_lat}&lon=${city_lon}&q=${city_query}`
         const query = await fetch(ts_uri, {method: 'GET'})
         const json = await query.json()
+
         console.log(city_name, "tileset", json)
         
         // update map
@@ -119,6 +136,8 @@
 
         const popup = new mapboxgl.Popup()
 
+        // map point(s) hover logic
+
         map.on('mouseenter', 'tilequery-points', (event) => {
             map.getCanvas().style.cursor = 'pointer'
             const geo = event.features[0].geometry.coordinates
@@ -126,12 +145,16 @@
 
             console.log("point geo", geo)
             console.log("point properties", properties)
+
+            place_name_show(properties.name)
         })
 
         map.on('mouseleave', 'tilequery-points', () => {
             map.getCanvas().style.cursor = 'default'
             console.log("mouseleave")
             popup.remove()
+
+            place_name_show("")
         })
     })
 </script>

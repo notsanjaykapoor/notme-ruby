@@ -4,16 +4,17 @@ module Service
   module Places
     class Search
 
-      def initialize(query:, offset:, limit:)
+      def initialize(query:, offset:, limit:, near: nil)
         @query = query
         @offset = offset
         @limit = limit
+        @near = near
 
-        @struct = Struct.new(:code, :places, :errors)
+        @struct = Struct.new(:code, :city_name, :places, :tags, :errors)
       end
 
       def call
-        struct = @struct.new(0, [], [])
+        struct = @struct.new(0, "", [], [], [])
 
         Console.logger.info(self, "#{Thread.current[:rid]} query #{@query}")
 
@@ -24,6 +25,11 @@ module Service
 
           tokens = struct_tokens.tokens
           query = ::Model::Place
+
+          if @near
+            # add city scope
+            query = query.where(Sequel.lit("lower(city) like ?", "#{@near.name_lower}%"))
+          end
 
           tokens.each do |object|
             field = object[:field]
@@ -41,9 +47,10 @@ module Service
                   city_name = city_names[0].downcase
                   query = query.where(Sequel.lit("lower(city) like ?", "#{city_name}%"))
                 else
-                  value = value.split(" ").map{ |s| s.downcase }.join(" ")
-                  query = query.where(Sequel.lit("lower(city) like ?", "#{value}%"))
+                  city_name = value.split(" ").map{ |s| s.downcase }.join(" ")
+                  query = query.where(Sequel.lit("lower(city) like ?", "#{city_name}%"))
                 end
+                struct.city_name = city_name
               end
             elsif ["name"].include?(field)
               if value[/^~/]
@@ -68,9 +75,10 @@ module Service
             elsif ["tag", "tags"].include?(field)
               values = value.split(",").map{ |s| s.to_s.strip.downcase }
               query = query.tagged_with_any(values)
+              struct.tags.concat(values)
             else
-                struct.code = 422
-                return struct
+              struct.code = 422
+              return struct
             end
           end
 

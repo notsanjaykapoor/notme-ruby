@@ -49,6 +49,14 @@ module Model
       bbox[3]
     end
 
+    def name_lower
+      name.downcase
+    end
+
+    def name_slug
+      name_lower.gsub(" ","-")
+    end
+
     def tags
       super || []
     end

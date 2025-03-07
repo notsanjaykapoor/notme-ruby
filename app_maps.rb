@@ -18,25 +18,81 @@ class AppMaps < Roda
     mapbox_session = r.session["mapbox_session"]
     mapbox_requests = (r.session["mapbox_requests"] || 0).to_i
 
-    # GET /maps/city/:id, html
-    r.get "city", Integer do |city_id|
-      city = ::Model::City.first(id: city_id)
+    # GET /maps/city/:id, html or htmx
+    r.get "city", String do |city_id|
+      query = r.params["q"].to_s
+
+      if city_id.match(/^\d+$/)
+        city_query = "id:#{city_id}"
+      else
+        city_query = "name:~#{city_id}"
+      end
+
+      search_result = ::Service::City::Search.new(
+        query: city_query,
+        offset: 0,
+        limit: 1,
+      ).call
+
+      city = search_result.cities[0]
+
+      tags_list_all = Model::Place.select(:tags).all().inject(Set[]) { |s, o| s.merge(o.tags) }
+      tags_list_new = tags_list_all.to_a.select{ |tag| !query.include?(tag) }
 
       if not city
         response.status = 422
-        return view("maps/city/show", layout: "layouts/app", locals: {city: nil})
+        return view(
+          "maps/city/show",
+          layout: "layouts/app",
+          locals: {
+            city: nil,
+            query: "",
+            request_path: r.path,
+            tags_list: tags_list_new,
+        })
       end
 
       Console.logger.info(self, "city #{city.name} mapbox session #{mapbox_session} requests #{mapbox_requests}/#{mapbox_max}")
 
       if mapbox_requests >= mapbox_max # throttle
         response.status = 429
-        return view("maps/city/show", layout: "layouts/app", locals: {city: nil})
+        return view(
+          "maps/city/show",
+          layout: "layouts/app",
+          locals: {
+            city: city,
+            query: query,
+            request_path: r.path,
+            tags_list: tags_list_new,
+          })
       end
 
       r.session["mapbox_requests"] = mapbox_requests + 1
 
-      view("maps/city/show", layout: "layouts/app", locals: {city: city, mapbox_token: mapbox_token})
+      if htmx_request == 0
+        view(
+          "maps/city/show",
+          layout: "layouts/app",
+          locals: {
+            city: city,
+            mapbox_token: mapbox_token,
+            query: query,
+            request_path: r.path,
+            tags_list: tags_list_new,
+          })
+        else
+          # update browser history
+          response.headers["HX-Push-Url"] = "#{r.path}"
+
+          # render without layout
+          render("maps/city/show_map", locals: {
+            city: city,
+            mapbox_token: mapbox_token,
+            query: query,
+            request_path: r.path,
+            tags_list: tags_list_new,
+          })          
+        end
     end
 
     # GET /maps, optional city=name param, html or htmx
@@ -46,41 +102,40 @@ class AppMaps < Roda
       Console.logger.info(self, "query '#{city_query}' mapbox session #{mapbox_session} requests #{mapbox_requests}/#{mapbox_max}")
 
       if city_query == ""
-        if htmx_request == 1
-          return response.headers["HX-Redirect"] = "/maps"
-        else
-          return view("maps/city/show", layout: "layouts/app", locals: {city: nil})
-        end
+        return view(
+          "maps/index",
+          layout: "layouts/app",
+          locals: {
+            request_path: r.path,
+          },
+        )
       end
 
-      if mapbox_requests >= mapbox_max # throttle
-        if htmx_request == 1
-          return response.headers["HX-Redirect"] = "/maps"
-        else
-          response.status = 429
-          return view("maps/city/show", layout: "layouts/app", locals: {city: nil})
-        end
-      end
-
-      city_query = ::Service::Database::Query.normalize(query: city_query, default_field: "name", default_match: "like")
       resolve_result = ::Service::City::Resolve.new(query: city_query, offset: 0, limit: 5).call
-
-      if resolve_result.code != 0
-        if htmx_request == 1
-          return response.headers["HX-Redirect"] = "/maps"
-        else
-          response.status = 404
-          return view("maps/city/show", layout: "layouts/app", locals: {city: nil})
-        end
-      end
-
       city = resolve_result.city
 
-      if htmx_request == 1
-        response.headers["HX-Redirect"] = "/maps/city/#{city.id}"
+      if city
+        return response.headers["HX-Redirect"] = "/maps/city/#{city.name_slug}"
       else
-        r.redirect("/maps/city/#{city.id}")
+        return response.headers["HX-Redirect"] = "/maps"
       end
+
+      # if resolve_result.code != 0
+      #   if htmx_request == 1
+      #     return response.headers["HX-Redirect"] = "/maps"
+      #   else
+      #     response.status = 404
+      #     return view("maps/city/show", layout: "layouts/app", locals: {city: nil})
+      #   end
+      # end
+
+      # city = resolve_result.city
+
+      # if htmx_request == 1
+      #   response.headers["HX-Redirect"] = "/maps/city/#{city.name_slug}"
+      # else
+      #   r.redirect("/maps/city/#{city.name_slug}")
+      # end
     end
   end
 end

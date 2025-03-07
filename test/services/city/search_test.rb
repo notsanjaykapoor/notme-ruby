@@ -3,8 +3,8 @@ require "test_helper"
 
 class CitySearchTest < Minitest::Test
   def setup
-    ::Model::City.create(data: {}, name: "Boston", lat: 42.35, lon: -71.05)
-    ::Model::City.create(data: {}, name: "Chicago", lat: 41.85, lon: -87.65)
+    @boston = ::Model::City.create(data: {}, name: "Boston", lat: 42.35, lon: -71.05)
+    @chicago = ::Model::City.create(data: {}, name: "Chicago", lat: 41.85, lon: -87.65)
   end
 
   def teardown
@@ -18,8 +18,22 @@ class CitySearchTest < Minitest::Test
       limit: 10,
     ).call
 
-    assert_equal struct.code, 0
-    assert_equal struct.cities.length, 2
+    assert_equal 0, struct.code
+    assert_equal 2, struct.cities.length
+    assert_equal 2, struct.total
+  end
+
+  def test_query_id_match
+    struct = ::Service::City::Search.new(
+      query: "id:#{@chicago.id}",
+      offset: 0,
+      limit: 1,
+    ).call
+
+    assert_equal 0, struct.code
+    assert_equal 1, struct.cities.length
+    assert_equal "Chicago", struct.cities[0].name
+    assert_equal 1, struct.total
   end
 
   def test_query_like_match
@@ -40,7 +54,8 @@ class CitySearchTest < Minitest::Test
       limit: 10,
     ).call
 
-    assert_equal struct.code, 0
-    assert_equal struct.cities.length, 0
+    assert_equal 0, struct.code
+    assert_equal 0, struct.cities.length
+    assert_equal 0, struct.total
   end
 end

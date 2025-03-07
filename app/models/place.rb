@@ -41,6 +41,14 @@ module Model
       end
     end # end scopes
 
+    def city_lower
+      city.downcase.gsub(" ", "-")
+    end
+
+    def city_slug
+      city_lower.gsub(" ","-")
+    end
+
     def geo_json_compact
       {
         "type" => "Feature",

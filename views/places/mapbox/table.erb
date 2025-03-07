@@ -1,38 +1,40 @@
 <table class="col-start-2 col-span-10">
-  <thead class="font-normal text-left text-[0.8125rem] leading-6 text-zinc-800">
-    <tr class="border-b-2">
-      <th class="p-4 pr-6">name</th>
-      <th class="p-4 pr-6">address</th>
-      <th class="p-4 pr-6">type</th>
-      <th class="p-4 pr-6">categories</th>
-      <th class="p-4 pr-6"></th>
-    </tr>
-  </thead>
-  <tbody id="places-data">
-    <% mapbox_list.each do |place| %>
-      <% mapbox_id = place.dig("mapbox_id") %>
+    <thead class="font-normal text-left text-xs leading-6 text-zinc-800">
+        <tr>
+            <th class="p-4 pr-6">name</th>
+            <th class="p-4 pr-6">address</th>
+            <th class="p-4 pr-6">type</th>
+            <th class="p-4 pr-6">categories</th>
+            <th class="p-4 pr-6"></th>
+        </tr>
+    </thead>
+    <tbody id="places-data">
+        <% mapbox_list.each do |place| %>
+            <% mapbox_id = place.dig("mapbox_id") %>
 
-      <tr class="group hover:bg-zinc-50 odd:bg-white even:bg-slate-50 text-sm">
-        <td class="p-4 pr-6 font-normal">
-          <%= place.dig("name") %>
-        </td>
-        <td class="p-4 pr-6 font-normal">
-          <%= place.dig("full_address") %>
-        </td>
-        <td class="p-4 pr-6 font-normal">
-          <%= place.dig("feature_type") %>
-        </td>
-        <td class="p-4 pr-6 font-normal">
-          <%= place.dig("poi_category")[0..1].join(", ") %>
-        </td>
-        <td>
-          <% if not mapbox_ids.include?(mapbox_id) %>
-            <button class="bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold py-1 px-2 rounded-full" hx-post="/places/add?mapbox_id=<%= mapbox_id %>" hx-target="closest tr" hx-swap="outerHTML swap:1s">
-              +
-            </button>
-          <% end %>
-        </td>
-      </tr>
-    <% end %>    
-  </tbody>
+            <tr class="group hover:bg-zinc-50 odd:bg-white even:bg-slate-50 text-xs">
+                <td class="p-4 pr-6 font-normal">
+                    <%= place.dig("name") %>
+                </td>
+                <td class="p-4 pr-6 font-normal">
+                    <%= place.dig("full_address") %>
+                </td>
+                <td class="p-4 pr-6 font-normal">
+                    <%= place.dig("feature_type") %>
+                </td>
+                <td class="p-4 pr-6 font-normal">
+                    <%= place.dig("poi_category")[0..1].join(", ") %>
+                </td>
+                <td>
+                    <% if not mapbox_ids.include?(mapbox_id) %>
+                    <a href="" hx-post="/places/add?mapbox_id=<%= mapbox_id %>" hx-target="closest tr" hx-swap="outerHTML swap:1s">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="mr-1 float-right size-5 text-blue-600">
+                            <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 9a.75.75 0 0 0-1.5 0v2.25H9a.75.75 0 0 0 0 1.5h2.25V15a.75.75 0 0 0 1.5 0v-2.25H15a.75.75 0 0 0 0-1.5h-2.25V9Z" clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                    <% end %>
+                </td>
+            </tr>
+        <% end %>    
+    </tbody>
 </table>

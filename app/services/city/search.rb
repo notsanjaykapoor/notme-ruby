@@ -5,15 +5,18 @@ module Service
     class Search
 
       def initialize(query:, offset:, limit:)
+        #
+        # Search database for city(s) in query
+        #
         @query = query
         @offset = offset
         @limit = limit
 
-        @struct = Struct.new(:code, :cities, :errors)
+        @struct = Struct.new(:code, :cities, :total, :errors)
       end
 
       def call
-        struct = @struct.new(0, [], [])
+        struct = @struct.new(0, [], 0, [])
 
         Console.logger.info(self, "#{Thread.current[:rid]} query #{@query}")
 
@@ -29,7 +32,9 @@ module Service
             field = object[:field]
             value = object[:value]
 
-            if ["name"].include?(field)
+            if ["id"].include?(field)
+              query = query.where(id: value)
+            elsif ["name"].include?(field)
               if value[/^~/]
                 value = value.gsub(/~/, '')
                 query = query.where(Sequel.lit("#{field} ilike ?", "%#{value}%"))
@@ -45,6 +50,8 @@ module Service
               query = query.where(Sequel.lit("temp <= ?", value.to_f))
             end
           end
+
+          struct.total = query.count
 
           query = query.order(Sequel.asc(:name)).offset(@offset).limit(@limit)
 
