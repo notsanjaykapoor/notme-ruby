@@ -10,11 +10,11 @@ module Service
         @limit = limit
         @near = near
 
-        @struct = Struct.new(:code, :city_name, :places, :tags, :errors)
+        @struct = Struct.new(:code, :city_name, :places, :tags, :total, :errors)
       end
 
       def call
-        struct = @struct.new(0, "", [], [], [])
+        struct = @struct.new(0, "", [], [], 0, [])
 
         Console.logger.info(self, "#{Thread.current[:rid]} query #{@query}")
 
@@ -82,6 +82,7 @@ module Service
             end
           end
 
+          struct.total = query.count
           struct.places = query.order(Sequel.asc(:name)).offset(@offset).limit(@limit).all
         rescue StandardError => e
           struct.code = 500

@@ -1,0 +1,26 @@
+<div class="flex flex-row">
+    <div class="flex flex-col w-1/12">
+
+    </div>
+    <div class="flex flex-col w-10/12 mx-auto mt-10">
+        <h3 class="font-bold mx-auto">
+            <%= app_name %>
+        </h3>
+        <div class="mx-auto mt-2 opacity-50 text-xs text-zinc-400">
+            @<%= app_version %>
+        </div>
+    </div>
+</div>
+
+<div class="flex flex-row mx-auto mt-10">
+    <div class="w-1/12"></div>
+    <div class="w-1/3 font-bold text-xs">
+        <input type="search" name="q" placeholder="query - e.g. food, armitage alehouse" autocomplete="off" hx-get="<%= mapbox_path %>" hx-target="#places-table" hx-trigger="keyup[keyCode==13]" class="peer px-0 mx-4 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans text-sm font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-pink-600 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50 required:border-red-500">
+    </div>
+</div>
+
+<div class="flex flex-col mx-auto" id="places-table">
+    <%= render "mapbox/list_table", locals: {
+        city: city, mapbox_ids: mapbox_ids, mapbox_list: mapbox_list, mapbox_path: mapbox_path,
+    } %>
+</div>

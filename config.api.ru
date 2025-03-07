@@ -3,6 +3,7 @@
 require "./boot.rb"
 require "./app_api_v1.rb"
 require "./app_graph.rb"
+require "./app_mapbox.rb"
 require "./app_maps.rb"
 require "./app_places.rb"
 require "./app_ticker.rb"
@@ -134,6 +135,10 @@ class App < Roda
 
     r.on "graph" do
       r.run AppGraph
+    end
+
+    r.on "mapbox" do
+      r.run AppMapbox
     end
 
     r.on "maps" do

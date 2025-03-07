@@ -18,19 +18,6 @@ class AppPlaces < Roda
     mapbox_session = r.session["mapbox_session"]
     mapbox_requests = (r.session["mapbox_requests"] || 0).to_i
 
-    # move
-    # POST /places/add?mapbox_id=xxx - htmx
-    r.post "add" do
-      mapbox_id = r.params["mapbox_id"].to_s
-      create_result = ::Service::Places::CreateFrom.new(mapbox_id: mapbox_id, mapbox_session: mapbox_session).call
-
-      if create_result.code != 0
-        # todo
-      end
-
-      return render("places/mapbox/add_ok")
-    end
-
     # GET /places/id/edit
     r.get Integer, "edit" do |place_id|
       place = ::Model::Place::find(id: place_id)
@@ -48,7 +35,7 @@ class AppPlaces < Roda
           app_name: app_name,
           app_version: app_version,
           place: place,
-          places_city_path: "places/city/#{place.city_slug}",
+          places_city_path: "/places/city/#{place.city_slug}",
           places_tags_path: "/places/#{place.id}/tags",
         }
       )
@@ -115,12 +102,15 @@ class AppPlaces < Roda
 
       places_list = search_result.places
       places_count = places_list.length
-      tags_list_cur = search_result.tags.to_set
+      places_total = search_result.total
 
-      tags_list_all = ::Model::Place.where(city: city.name).select(:tags).all().inject(Set[]) { |s, o| s.merge(o.tags) }
-      tags_list_new = (tags_list_all - tags_list_cur).to_a.sort
+      tags_set_cur = search_result.tags.to_set
+      tags_list_new = (::Service::City::Tags.tags_set_by_city(city_name: city.name) - tags_set_cur).to_a.sort
 
       app_name = "Places near '#{city.name}'"
+
+      mapbox_path = "/mapbox/city/#{city.name_slug}"
+      places_path = r.path
 
       if htmx_request == 0
         view(
@@ -130,11 +120,13 @@ class AppPlaces < Roda
             app_name: app_name,
             app_version: app_version,
             city: city,
+            mapbox_path: mapbox_path,
             places_count: places_count,
             places_list: places_list,
-            places_path: r.path,
-            query: query,
-            query_example: "place search - e.g. tags:food",
+            places_path: places_path,
+            places_query: query,
+            places_query_example: "place search - e.g. tags:food",
+            places_total: places_total,
             tags_list: tags_list_new,
           },
         )
@@ -143,77 +135,19 @@ class AppPlaces < Roda
         response.headers["HX-Push-Url"] = "/places?q=#{query}"
 
         # render without layout
-        render("places/list_table", locals: {
-          city: city,
-          places_count: places_count,
-          places_list: places_list,
-          places_path: r.path,
-          query: query,
-          tags_list: tags_list_new,
-        })
+        render(
+          "places/list_table",
+            locals: {
+            city: city,
+            mapbox_path: mapbox_path,
+            places_count: places_count,
+            places_list: places_list,
+            places_path: places_path,
+            places_query: query,
+            places_total: places_total,
+            tags_list: tags_list_new,
+          })
       end
-    end
-
-    # move
-    # GET /places/mapbox/query?q=food+near:chicago - htmx
-    r.get "mapbox/query" do
-      mapbox_query = r.params["q"].to_s
-
-      # extract location from query
-      match_query = mapbox_query.match(/(.+) (near:[a-zA-z\-\s]+)/)
-
-      if not match_query
-        @error = "invalid search"
-        return render("places/mapbox/query_error")
-      end
-
-      _, city_query = match_query[2].split(":")
-      resolve_result = ::Service::City::Resolve.new(query: city_query, offset: 0, limit: 5).call
-
-      if resolve_result.code != 0
-        @error = "invalid location"
-        return render("places/mapbox/query_error")
-      end
-
-      city = resolve_result.city
-      query = match_query[1]
-
-      search_result = ::Service::Mapbox::Search.new(city: city, query: query, limit: 10, session: mapbox_session).call
-      mapbox_list = search_result.data
-
-      # mapbox_list = [
-      #   {
-      #     "name" => "Au Cheval",
-      #     "full_address" => "800 W Randolph St",
-      #     "feature_type" => "poi",
-      #     "mapbox_id"=>"dXJuOm1ieHBvaTo2YWYzNGVjZi0yNTFjLTRiMDMtYmMwNS01MGE0NDk0ZDkwMzg",
-      #     "poi_category"=>["coworking space", "office"]",
-      #   },
-      #   {
-      #     "name" => "Random Spot",
-      #     "full_address" => "801 W Randolph St",
-      #     "feature_type" => "poi",
-      #     "mapbox_id"=>"dXJuOm1ieHBvaTo2YWYzNGVjZi0yNTFjLTRiMDMtYmMwNS01MGE0NDk0ZDkwMxx",
-      #     "poi_category"=>["coworking space", "office"]","
-      #   },
-      # ]
-
-      mapbox_list.each_with_index do |data, index|
-        puts index+1
-        puts data
-        puts
-      end
-
-      mapbox_ids = ::Model::Place.select(:source_id).all.map{ |o| o.source_id }.to_set
-
-      render("places/mapbox/table", locals: {mapbox_ids: mapbox_ids, mapbox_list: mapbox_list})
-    end
-
-    # GET /places/mapbox, html
-    r.get "mapbox" do
-      text = "Mapbox Search"
-
-      view("places/mapbox/index", layout: "layouts/app", locals: {app_version: app_version, text: text})
     end
 
     # GET /places?q=city:chicago
@@ -231,15 +165,32 @@ class AppPlaces < Roda
       search_result = ::Service::Places::Search.new(
         query: query,
         offset: 0,
-        limit: 50,
+        limit: 20,
       ).call
 
       places_list = search_result.places
       places_count = places_list.length
-      tags_list_cur = search_result.tags.to_set
+      places_total = search_result.total
 
-      tags_list_all = Model::Place.select(:tags).all().inject(Set[]) { |s, o| s.merge(o.tags) }
-      tags_list_new = (tags_list_all - tags_list_cur).to_a.sort
+      city_name = search_result.city_name
+
+      if city_name != ""
+        # redirect to city view
+        city_path = "/places/city/#{city_name.slugify}"
+
+        if htmx_request == 0
+          return r.redirect()
+        else
+          return response.headers["HX-Redirect"] = city_path
+        end
+      end
+
+      tags_set_cur = search_result.tags.to_set
+      tags_list_new = (::Service::City::Tags.tags_set_all - tags_set_cur).to_a.sort
+
+      places_path = r.path
+
+      city_names = ::Model::Place.select(:city).distinct(:city).all().map{ |o| o.city.slugify }.sort
 
       if htmx_request == 0
         view(
@@ -249,25 +200,29 @@ class AppPlaces < Roda
             app_name: app_name,
             app_version: app_version,
             city: nil,
+            city_names: city_names,
             places_count: places_count,
             places_list: places_list,
-            places_path: r.path,
-            query: query,
-            query_example: "places search - e.g. city:chicago, tags:food",
+            places_path: places_path,
+            places_query: query,
+            places_query_example: "places search - e.g. tags:food, city:chicago",
+            places_total: places_total,
             tags_list: tags_list_new,
           },
         )
       else
         # update browser history
-        response.headers["HX-Push-Url"] = "#{r.path}=#{query}"
+        response.headers["HX-Push-Url"] = "#{r.path}?q=#{query}"
 
         # render without layout
         render("places/list_table", locals: {
           city: nil,
+          city_names: city_names,
           places_count: places_count,
           places_list: places_list,
-          places_path: r.path,
-          query: query,
+          places_path: places_path,
+          places_query: query,
+          places_total: places_total,
           tags_list: tags_list_new,
         })
       end

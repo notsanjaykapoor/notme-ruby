@@ -1,5 +1,9 @@
 class String
 
+  def slugify
+    self.downcase.gsub(" ","-")
+  end
+
   def underscore
     self.gsub(/::/, '/').
       gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').

@@ -36,8 +36,8 @@ class AppMaps < Roda
 
       city = search_result.cities[0]
 
-      tags_list_all = Model::Place.select(:tags).all().inject(Set[]) { |s, o| s.merge(o.tags) }
-      tags_list_new = tags_list_all.to_a.select{ |tag| !query.include?(tag) }
+      tags_set_all = ::Service::City::Tags.tags_set_by_city(city_name: city.name)
+      tags_list_new = tags_set_all.to_a.select{ |tag| !query.include?(tag) }.to_a.sort
 
       if not city
         response.status = 422
