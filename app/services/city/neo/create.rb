@@ -16,7 +16,7 @@ module Service
         neo_result = session.run("match (n:city {name: '#{city.name}'}) return count(n)").single
 
         if neo_result.values[0] > 0
-          return 429
+          return 409
         end
 
         session.write_transaction do |tx|
@@ -30,9 +30,9 @@ module Service
         0
       end
 
-      def self.train_create(session:, city_src:, city_dst:, duration:)
+      def self.path_create(session:, city_src:, city_dst:, duration:)
         #
-        # create train relationship between cities
+        # create train path between cities
         #
 
         session.write_transaction do |tx|

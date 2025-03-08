@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
-require "protocol/websocket/json_message"
+# require "protocol/websocket/json_message"
 
 module Services
   module Ws

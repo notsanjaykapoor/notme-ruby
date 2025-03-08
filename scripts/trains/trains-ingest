@@ -28,24 +28,11 @@ parser.parse!
     ::Service::Neo.delete_all(session: session)
   end
 
-  Console.logger.info("trains", "nodes create")
+  nodes_created = 0
+  nodes_updated = 0
+  paths_updated = 0
 
-  cities_created = 0
-  trains_created = 0
-
-  ::Model::City.all do |city|
-    code = ::Service::City::Neo.node_create(session: session, city: city)
-
-    if code == 0
-      cities_created += 1
-
-      Console.logger.info("trains", "node #{city.name} created")
-    end
-  end
-
-  Console.logger.info("trains", "nodes created #{cities_created}")
-
-  Console.logger.info("trains", "trains create")
+  Console.logger.info("trains", "train routes create")
 
   CSV.foreach("data/trains.csv", headers: true) do |row|
     next if not row["src"]
@@ -67,15 +54,29 @@ parser.parse!
       Console.logger.info("trains", "city created #{city_dst_name}")
     end
 
-    code = ::Service::City::Neo.train_create(
+    [city_src, city_dst].map do |city_obj|
+      node_code = ::Service::City::Neo.node_create(session: session, city: city_obj)
+
+      if node_code == 0
+        nodes_created += 1
+      elsif node_code == 409
+        nodes_updated += 1
+      end
+    end
+
+    path_code = ::Service::City::Neo.path_create(
       session: session,
       city_src: city_src,
       city_dst: city_dst,
       duration: row["duration"],
     )
 
-    # Console.logger.info("neo", "train create #{code}")
+    if path_code == 0
+      paths_updated += 1
+    end
   end
+
+  Console.logger.info("trains", "train routes created - cities created #{nodes_created} updated #{nodes_updated}, routes updated #{paths_updated}")
 
   if query = options[:query]
     search_results = ::Service::City::Neo.search(session: session, query: query)

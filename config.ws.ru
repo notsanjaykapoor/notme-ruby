@@ -1,7 +1,7 @@
 require "async"
 require "async/websocket/adapters/rack"
 require "logger"
-require "protocol/websocket/json_message"
+# require "protocol/websocket/json_message"
 
 # boot app
 

@@ -8,6 +8,7 @@ module Service
 
       def self.nodes_search(query:, session:)
         if not query.match(/:/)
+          # normalize query
           query = "city:#{query}"
         end
 

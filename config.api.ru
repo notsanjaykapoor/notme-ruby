@@ -7,6 +7,7 @@ require "./app_mapbox.rb"
 require "./app_maps.rb"
 require "./app_places.rb"
 require "./app_ticker.rb"
+require "./app_trains.rb"
 require "./app_weather.rb"
 
 require "rack/cors"
@@ -159,6 +160,10 @@ class App < Roda
 
     r.on "ticker" do
       r.run AppTicker
+    end
+
+    r.on "trains" do
+      r.run AppTrains
     end
 
     r.on "weather" do

@@ -3,8 +3,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 ruby '~> 3.2'
 
-gem "async"
-gem "async-websocket"
+gem "async", "2.12.1" # older version for neo4j-ruby-driver 
 gem "base58"
 gem "base64"
 gem "colorize"
@@ -16,7 +15,7 @@ gem "geocoder", require: false
 gem "graphql", require: false
 gem "http", require: false
 gem "logger", "~> 1.6"
-gem "neo4j-ruby-driver", require: false
+gem "neo4j-ruby-driver", "~> 4.4.6"
 gem "oj", require: false
 gem "openssl", require: false
 gem "opentelemetry-exporter-otlp", "~> 0.26.1"
@@ -39,3 +38,5 @@ group :development, :test do
   gem "minitest-reporters"
   gem "rack-test"
 end
+
+gem "async-websocket", "~> 0.30.0"

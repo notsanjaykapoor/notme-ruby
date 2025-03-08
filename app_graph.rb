@@ -50,20 +50,23 @@ class AppGraph < Roda
 
           # render partial view
           if table == "cities"
-            render("graph/cities/table", locals: {cities: cities, query: query_raw})
+            render("graph/cities/list_table", locals: {cities: cities, query: query_raw})
           elsif table == "paths"
-            render("graph/paths/table", locals: {paths: paths, query: query_raw})
+            render("graph/paths/list_table", locals: {paths: paths, query: query_raw})
           end
         else
           # render full view
-          view("graph/cities/index", layout: "layouts/app", locals: {
-            app_name: app_name,
-            app_version: app_version,
-            cities: cities,
-            paths: paths,
-            query: query_raw,
-            table: table,
-          })
+          view(
+            "graph/list",
+            layout: "layouts/app",
+            locals: {
+              app_name: app_name,
+              app_version: app_version,
+              cities: cities,
+              paths: paths,
+              query: query_raw,
+              table: table,
+            })
         end
       end
     end

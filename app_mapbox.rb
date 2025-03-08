@@ -18,7 +18,7 @@ class AppMapbox < Roda
     mapbox_session = r.session["mapbox_session"]
     mapbox_requests = (r.session["mapbox_requests"] || 0).to_i
 
-    # GET /mapbox/city/:city_name/add?mapbox_id=xxxx - htmx
+    # POST /mapbox/city/:city_name/add?mapbox_id=xxxx - htmx
     r.post "city", String, "add" do |city_name|
       mapbox_id = r.params["mapbox_id"].to_s
 

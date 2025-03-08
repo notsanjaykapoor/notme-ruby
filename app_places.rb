@@ -11,12 +11,7 @@ class AppPlaces < Roda
     app_version = ENV["APP_VERSION"] || ENV["RACK_ENV"]
     htmx_request = r.headers["HX-Request"] ? 1 : 0
 
-    mapbox_max = (ENV["APP_MAPBOX_MAX"] || APP_MAPBOX_MAX_DEFAULT).to_i
-    mapbox_token = ENV["MAPBOX_TOKEN"]
-
     r.session["mapbox_session"] ||= ULID.generate()
-    mapbox_session = r.session["mapbox_session"]
-    mapbox_requests = (r.session["mapbox_requests"] || 0).to_i
 
     # GET /places/id/edit
     r.get Integer, "edit" do |place_id|

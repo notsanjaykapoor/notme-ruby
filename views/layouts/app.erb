@@ -8,6 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://unpkg.com/htmx.org/dist/ext/ws.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/json-enc.js"></script>
     <style>
       tr.htmx-swapping td {opacity: 0; transition: opacity 1s ease-out;}
     </style>
@@ -16,9 +17,9 @@
     <header class="flex flex-wrap sm:justify-start sm:flex-nowrap z-50 w-full bg-white text-sm py-4 dark:bg-blue-700">
       <nav class="max-w-[85rem] w-full mx-auto px-4 sm:flex sm:items-center sm:justify-between" aria-label="Global">
         <div class="flex flex-row items-center gap-5 mt-5 sm:justify-end sm:mt-0 sm:ps-5">
-          <a class="font-medium text-white hover:text-gray-400" href="/graph">Graph</a>
           <a class="font-medium text-white hover:text-gray-400" href="/places">Places</a>
           <a class="font-medium text-white hover:text-gray-400" href="/maps">Maps</a>
+          <a class="font-medium text-white hover:text-gray-400" href="/trains">Trains</a>
           <a class="font-medium text-white hover:text-gray-400" href="/ticker">Ticker</a>
           <a class="font-medium text-white hover:text-gray-400" href="/weather">Weather</a>
         </div>

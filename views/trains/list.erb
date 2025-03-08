@@ -1,0 +1,41 @@
+<div class="flex flex-row">
+    <div class="flex flex-col mx-auto mt-10">
+        <h3 class="font-bold mx-auto">
+            <%= app_name %>
+        </h3>
+        <div class="mx-auto mt-2 opacity-50 text-xs text-zinc-400">
+            @<%= app_version %>
+        </div>
+    </div>
+</div>
+
+<div class="flex flex-row mx-auto mt-10">
+    <div class="w-1/12"></div>
+    <div class="w-3/12 font-normal text-xs">
+        <form class="max-w-sm mx-auto text-xs mr-0">
+            <select id="search-algo-select" class="block px-0 pt-4 pb-1.5 w-full text-xs text-gray-400 bg-transparent border-0 border-b border-gray-200 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer disabled:border-0 disabled:bg-blue-gray-50">
+                <option selected>select algorithm</option>
+                <% for search_object in search_algos %>
+                    <option value="<%= search_object[:path] %>"><%= search_object[:name].titleize %></option>
+                <% end %>
+            </select>
+        </form>
+    </div>
+    <div class="w-2/12"></div>
+    <div class="w-5/12 font-bold text-xs">
+        <input type="search" name="q" value="<%= query %>" placeholder="search - e.g. city:zur, country:fra, nodes:munich:2, paths:prague:paris:4" autocomplete="off" hx-get="/trains" hx-target="#paths-table" hx-trigger="search" class="peer px-0 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-indigo-500 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50">
+    </div>
+</div>
+
+<div class="flex flex-col mx-auto" id="paths-table">
+</div>
+
+<script>
+    // list for select change events and redirect to place city view
+    const search_algo = document.getElementById("search-algo-select")
+
+    search_algo.addEventListener("change", function() {
+        window.location.href = search_algo.value
+    })
+</script>
+

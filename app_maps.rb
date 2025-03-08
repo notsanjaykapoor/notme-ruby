@@ -80,19 +80,19 @@ class AppMaps < Roda
             request_path: r.path,
             tags_list: tags_list_new,
           })
-        else
-          # update browser history
-          response.headers["HX-Push-Url"] = "#{r.path}"
+      else
+        # update browser history
+        response.headers["HX-Push-Url"] = "#{r.path}"
 
-          # render without layout
-          render("maps/city/show_map", locals: {
-            city: city,
-            mapbox_token: mapbox_token,
-            query: query,
-            request_path: r.path,
-            tags_list: tags_list_new,
-          })          
-        end
+        # render without layout
+        render("maps/city/show_map", locals: {
+          city: city,
+          mapbox_token: mapbox_token,
+          query: query,
+          request_path: r.path,
+          tags_list: tags_list_new,
+        })
+      end
     end
 
     # GET /maps, optional city=name param, html or htmx

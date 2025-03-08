@@ -1,9 +1,11 @@
 src,dst,duration
+amsterdam,antwerp,1.4
 amsterdam,berlin,6.0
 amsterdam,frankfurt,4.0
 amsterdam,brussels,3.0
 amsterdam,paris,3.5
 amsterdam,rotterdam,0.75
+antwerp,paris,2.5
 barcelona,lyon,5.0
 barcelona,madrid,2.5
 barcelona,valencia,3.0

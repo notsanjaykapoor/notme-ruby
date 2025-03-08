@@ -6,7 +6,7 @@ require "async/websocket/client"
 require "colorize"
 require "json"
 require "optparse"
-require "protocol/websocket/json_message"
+# require "protocol/websocket/json_message"
 
 options = {
   port: "7070"
