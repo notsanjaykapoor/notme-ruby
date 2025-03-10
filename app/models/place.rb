@@ -52,15 +52,16 @@ module Model
       city_lower.gsub(" ","-")
     end
 
-    def geo_json_compact
+    def geo_json_compact(color:)
       {
         "type" => "Feature",
         "geometry" => {
-          "coordinates" => [lon, lat], "type"=>"Point"
+          "coordinates" => [lon, lat],
+          "type"=>"Point",
         },
         "properties" => {
           "city" => city,
-          "color" => _tag_color(tags: tags),
+          "color" => color,
           "name" => name,
         },
       }
@@ -88,20 +89,6 @@ module Model
 
     def updated_at_unix
       updated_at.to_i
-    end
-
-    protected
-
-    def _tag_color(tags:)
-      if tags.include?("hotel")
-        "green"
-      elsif tags.include?("bar") or tags.include?("food")
-        "blue"
-      elsif tags.include?("shopping")
-        "orange"
-      else
-        "yellow"
-      end
     end
 
   end

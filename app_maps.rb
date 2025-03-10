@@ -37,8 +37,9 @@ class AppMaps < Roda
       city = search_result.cities[0]
 
       tags_list = ::Service::City::Tags.tags_set_by_city(city_name: city.name).sort
+      tags_color = tags_list.inject({}) { |d, tag| d[tag] = ::Service::Places::Tags.tag_color(tags: [tag]); d}
       tags_cur = tags_list.to_a.select{ |tag| query.include?(tag) }.to_a.sort
-      
+
       if not city
         response.status = 422
         return view(
@@ -64,6 +65,7 @@ class AppMaps < Roda
             city: city,
             query: query,
             request_path: r.path,
+            tags_color: tags_color,
             tags_cur: tags_cur,
             tags_list: tags_list,
           })
@@ -80,6 +82,7 @@ class AppMaps < Roda
             mapbox_token: mapbox_token,
             query: query,
             request_path: r.path,
+            tags_color: tags_color,
             tags_cur: tags_cur,
             tags_list: tags_list,
           })
@@ -93,7 +96,9 @@ class AppMaps < Roda
           mapbox_token: mapbox_token,
           query: query,
           request_path: r.path,
-          tags_list: tags_list_new,
+          tags_color: tags_color,
+          tags_cur: tags_cur,
+          tags_list: tags_list,
         })
       end
     end
@@ -122,23 +127,6 @@ class AppMaps < Roda
       else
         return response.headers["HX-Redirect"] = "/maps"
       end
-
-      # if resolve_result.code != 0
-      #   if htmx_request == 1
-      #     return response.headers["HX-Redirect"] = "/maps"
-      #   else
-      #     response.status = 404
-      #     return view("maps/city/show", layout: "layouts/app", locals: {city: nil})
-      #   end
-      # end
-
-      # city = resolve_result.city
-
-      # if htmx_request == 1
-      #   response.headers["HX-Redirect"] = "/maps/city/#{city.name_slug}"
-      # else
-      #   r.redirect("/maps/city/#{city.name_slug}")
-      # end
     end
   end
 end

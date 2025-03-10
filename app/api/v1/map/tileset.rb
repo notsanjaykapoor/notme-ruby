@@ -32,7 +32,9 @@ module Api
               limit: 100,
             ).call
 
-            features = search_results.places.map { |place| place.geo_json_compact }
+            features = search_results.places.map do
+              |place| place.geo_json_compact(color: ::Service::Places::Tags.tag_color(tags: place.tags))
+            end
           else
             features = []
           end
