@@ -4,7 +4,7 @@ The api server supports both rest and graphql endpoints.  The websockets server 
 
 The app also supports a front-end using the [Tilt](https://github.com/rtomayko/tilt) template engine.
 
-#### Setup
+### Setup
 
 This repo uses ruby 3.3 but should work with any recent ruby version.
 
@@ -46,7 +46,7 @@ or
 make dev
 ```
 
-#### Train Routes
+### Train Routes
 
 I love traveling in Europe by train.  When I plan trips, I want a better way to figure out routes from city to city based on time and train changes.  I added train routes to Neo4j and built a visual interface with a simple query language to get answers to some of my most common questions.
 
@@ -59,7 +59,7 @@ Example 2 - Find all routes from Munich to Paris with at most 2 train changes:
 ![Graph Routes Example](https://ik.imagekit.io/notme001/readme/graph_routes_munich_paris.png "graph routes query")
 
 
-#### Places and Maps
+### Places and Maps
 
 I love traveling and Google maps is my navigation tool when I explore different cities.  But Google maps doesn't allow me to export my data (or at least not easily via an api).  I want a tool to save places, add tags and notes, and own this data.
 
@@ -78,7 +78,7 @@ Map Saved Places - Show map of saved places near Paris:
 ![Map Saved Places Example](https://ik.imagekit.io/notme001/readme/paris_maps_view.png "map saved places")
 
 
-#### Weather App
+### Weather App
 
 Sign up for an [openweather](https://openweathermap.org) api token and update .env.dev.
 
