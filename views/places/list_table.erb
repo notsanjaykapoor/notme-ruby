@@ -1,7 +1,7 @@
 <div class="flex flex-row mt-5">
     <div class="w-1/12"></div>
     <div class="font-normal text-zinc-400 text-xs">
-        query '<%= places_query %>', results <%= places_count %>, total <%= places_total %>
+        query '<%= places_query %>', results <%= offset+1 %> - <%= [offset+limit, total].min %> of <%= total %>
     </div>
 </div>
 
@@ -20,9 +20,13 @@
         <% end %>
 
         <% tags_list.each do |tag| %>
-            <a href="<%= places_path %>?q=tags:<%= tag %>">
-                <button class="rounded-full text-xs font-bold text-white bg-orange-600 py-1 px-2"><%= tag %></button>
-            </a>
+            <% if tags_cur.include?(tag) %>
+                <button class="rounded-full text-xs font-bold text-white bg-orange-300 py-1 px-2"><%= tag %></button>
+            <% else %>
+                <a href="<%= places_path %>?q=tags:<%= tag %>">
+                    <button class="rounded-full text-xs font-bold text-white bg-orange-600 py-1 px-2"><%= tag %></button>
+                </a>
+            <% end %>
         <% end %>
     </div>
 </div>
@@ -35,6 +39,7 @@
             <tr class="">
                 <th class="p-4">name</th>
                 <th class="p-4">tags</th>
+                <th class="p-4">notes</th>
                 <th class="p-4">location</th>
                 <th class="p-4"></th>
             </tr>
@@ -47,6 +52,9 @@
                     </td>
                     <td class="p-4 font-normal">
                         <%= place.tags.join(", ") %>
+                    </td>
+                    <td class="p-4 font-normal">
+                        <%= place.notes_size %>
                     </td>
                     <td class="p-4">
                         <% if city %>
@@ -69,4 +77,33 @@
             <% end %>    
         </tbody>
     </table>
+</div>
+
+<div class="flex flex-row mt-10 mb-10">
+    <div class="w-1/12"></div>
+    <div class="w-10/12">
+        <nav class="flex items-center justify-between gap-x-1" aria-label="Pagination">
+            <button type="button" class="min-h-9.5 min-w-9.5 py-2 px-2.5 inline-flex justify-center items-center gap-x-1.5 text-xs rounded-lg text-gray-800 hover:bg-gray-100 focus:outline-hidden focus:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none" aria-label="Previous">
+                <% if offset > 0 %>
+                    <a href="<%= page_prev %>" class="">
+                        <svg aria-hidden="true" class="hidden shrink-0 size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m15 18-6-6 6-6"></path>
+                        </svg>
+                        <span>Previous</span>
+                    </a>
+                <% end %>
+            </button>
+
+            <button type="button" class="min-h-9.5 min-w-9.5 py-2 px-2.5 inline-flex justify-center items-center gap-x-1.5 text-xs rounded-lg text-gray-800 hover:bg-gray-100 focus:outline-hidden focus:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none" aria-label="Next">
+                <% if offset + limit < total %>
+                    <a href="<%= page_next %>" class="">
+                        <span>Next</span>
+                        <svg aria-hidden="true" class="hidden shrink-0 size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m9 18 6-6-6-6"></path>
+                        </svg>
+                    </a>
+                <% end %>
+            </button>
+        </nav>
+    </div>
 </div>

@@ -22,7 +22,7 @@ module Service
             # normalize query with id tag
             @query = "id:#{@query}"
           else
-            # normalize query with id tag
+            # normalize query with name tag
             @query = "name:#{@query}"
           end
         end
@@ -48,8 +48,9 @@ module Service
         end
 
         geocode_data = geocode_result[0].data
+        address_type = geocode_data.fetch("addresstype", "")
 
-        if (geocode_data.dig("addresstype") or "") != "city"
+        if not ["city", "province"].include?(address_type)
           struct.code = 422
           return struct
         end

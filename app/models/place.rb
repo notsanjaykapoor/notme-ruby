@@ -11,6 +11,9 @@ module Model
       validates_unique [:name]
     end
 
+    SOURCE_MANUAL = "manual"
+    SOURCE_MAPBOX = "mapbox"
+
     # scopes
 
     dataset_module do
@@ -61,6 +64,18 @@ module Model
           "name" => name,
         },
       }
+    end
+
+    def notes
+      data.fetch("notes", "")
+    end
+
+    def notes=(s)
+      data["notes"] = s
+    end
+
+    def notes_size
+      notes.length
     end
 
     def tags

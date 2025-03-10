@@ -18,7 +18,7 @@ class PlaceSearchTest < Minitest::Test
       lat: 41.918353,
       lon: -87.653600,
       source_id: ULID.generate,
-      source_name: "mapbox",
+      source_name: ::Model::Place::SOURCE_MAPBOX,
       tags: ["food"],
     )
 
@@ -29,7 +29,7 @@ class PlaceSearchTest < Minitest::Test
       lat: 41.533333, # outside chicago bounding box
       lon: -87.653600,
       source_id: ULID.generate,
-      source_name: "mapbox",
+      source_name: ::Model::Place::SOURCE_MAPBOX,
       tags: ["food"],
     )
   end

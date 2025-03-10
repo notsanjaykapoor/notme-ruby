@@ -30,6 +30,7 @@ parser.parse!
 
   nodes_created = 0
   nodes_updated = 0
+  nodes_visited = Set[]
   paths_updated = 0
 
   Console.logger.info("trains", "train routes create")
@@ -59,8 +60,12 @@ parser.parse!
 
       if node_code == 0
         nodes_created += 1
+        nodes_visited.add(city_obj.name)
       elsif node_code == 409
-        nodes_updated += 1
+        if not nodes_visited.member?(city_obj.name)
+          nodes_updated += 1
+          nodes_visited.add(city_obj.name)
+        end
       end
     end
 

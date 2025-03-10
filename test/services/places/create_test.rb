@@ -49,6 +49,7 @@ class PlacesCreateTest < Minitest::Test
 
     struct = ::Service::Places::Create.new(
       geo_json: geo_json,
+      source_name: ::Model::Place::SOURCE_MAPBOX,
     ).call
 
     assert_equal struct.code, 0
@@ -77,6 +78,7 @@ class PlacesCreateTest < Minitest::Test
 
     struct = ::Service::Places::Create.new(
       geo_json: geo_json,
+      source_name: ::Model::Place::SOURCE_MAPBOX,
     ).call
 
     assert struct.code == 422
@@ -93,6 +95,7 @@ class PlacesCreateTest < Minitest::Test
 
     struct = ::Service::Places::Create.new(
       geo_json: geo_json,
+      source_name: ::Model::Place::SOURCE_MAPBOX,
     ).call
 
     assert_equal struct.code, 422

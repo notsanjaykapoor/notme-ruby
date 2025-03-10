@@ -46,7 +46,7 @@ city = resolve_result.city
 
 Console.logger.info(subject, "city #{city.name} query '#{query}' session '#{session}'")
 
-search_result = ::Service::Mapbox::Search.new(city: city, query: query, limit: 10, session: session).call
+search_result = ::Service::Mapbox::Search.new(city: city, query: query, limit: 10).call
 
 search_result.data.each_with_index do |data, index|
   puts index+1

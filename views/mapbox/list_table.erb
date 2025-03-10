@@ -18,55 +18,67 @@
     </div>
 </div>
 
-<div class="flex flex-row mt-5">
-    <div class="w-1/12"></div>
+<% if mapbox_code > 0 %>
+    <div class="flex flex-row mt-10">
+        <div class="w-1/12"></div>
+        <div class="text-xs text-red-600 font-bold">
+            <%= mapbox_errors.join(", ") %>
+        </div>
+    </div>
 
-    <table class="w-10/12">
-        <thead class="font-normal text-left text-xs leading-6 text-zinc-800">
-            <tr>
-                <th class="p-4">name</th>
-                <th class="p-4">address</th>
-                <th class="p-4">type</th>
-                <th class="p-4">categories</th>
-                <th class="p-4"></th>
-            </tr>
-        </thead>
-        <tbody id="places-data">
-            <% mapbox_list.each do |place| %>
-                <% mapbox_id = place.dig("mapbox_id") %>
+<% end %>
 
-                <% if mapbox_ids.include?(mapbox_id) %>
-                    <% member = 1 %>
-                    <% opacity = "opacity-20" %>
-                <% else %>
-                    <% member = 0 %>
-                    <% opacity = "" %>
-                <% end %>
+<% if mapbox_list.length > 0 %>
+    <div class="flex flex-row mt-5">
+        <div class="w-1/12"></div>
 
-                <tr class="group hover:bg-zinc-50 odd:bg-white even:bg-slate-50 text-xs <%= opacity %>">
-                    <td class="p-4 font-normal">
-                        <%= place.dig("name") %>
-                    </td>
-                    <td class="p-4 font-normal">
-                        <%= place.dig("full_address") %>
-                    </td>
-                    <td class="p-4 font-normal">
-                        <%= place.dig("feature_type") %>
-                    </td>
-                    <td class="p-4 font-normal">
-                        <%= place.dig("poi_category")[0..1].join(", ") %>
-                    </td>
-                    <td class="p-4">
-                        <% if member == 0 %>
-                            <a hx-post="<%= mapbox_path %>/add?mapbox_id=<%= mapbox_id %>" hx-target="closest tr" hx-swap="outerHTML swap:1s">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="font-bold size-4 text-blue-700">
-                                    <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
-                                </svg>
-                            </a>
-                        <% end %>
-                    </td>
+        <table class="w-10/12">
+            <thead class="font-normal text-left text-xs leading-6 text-zinc-800">
+                <tr>
+                    <th class="p-4">name</th>
+                    <th class="p-4">address</th>
+                    <th class="p-4">type</th>
+                    <th class="p-4">categories</th>
+                    <th class="p-4"></th>
                 </tr>
-            <% end %>    
-        </tbody>
-    </table>
-</div>
+            </thead>
+            <tbody id="places-data">
+                <% mapbox_list.each do |place| %>
+                    <% mapbox_id = place.dig("mapbox_id") %>
+
+                    <% if mapbox_ids.include?(mapbox_id) %>
+                        <% member = 1 %>
+                        <% opacity = "opacity-20" %>
+                    <% else %>
+                        <% member = 0 %>
+                        <% opacity = "" %>
+                    <% end %>
+
+                    <tr class="group hover:bg-zinc-50 odd:bg-white even:bg-slate-50 text-xs <%= opacity %>">
+                        <td class="p-4 font-normal">
+                            <%= place.dig("name") %>
+                        </td>
+                        <td class="p-4 font-normal">
+                            <%= place.dig("full_address") %>
+                        </td>
+                        <td class="p-4 font-normal">
+                            <%= place.dig("feature_type") %>
+                        </td>
+                        <td class="p-4 font-normal">
+                            <%= (place.dig("poi_category_ids") or [])[0..2].join(", ") %>
+                        </td>
+                        <td class="p-4">
+                            <% if member == 0 %>
+                                <a hx-post="<%= mapbox_path %>/add?mapbox_id=<%= mapbox_id %>" hx-target="closest tr" hx-swap="outerHTML swap:1s">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="font-bold size-4 text-blue-700">
+                                        <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+                                    </svg>
+                                </a>
+                            <% end %>
+                        </td>
+                    </tr>
+                <% end %>    
+            </tbody>
+        </table>
+    </div>
+<% end %>

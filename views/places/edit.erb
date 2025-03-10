@@ -23,10 +23,16 @@
     } %>
 </div>
 
+<div id="place-notes">
+    <%= render "places/edit_notes", locals: {
+        place: place, places_notes_path: places_notes_path,
+    } %>
+</div>
+
 
 <div class="flex flex-row mt-10">
     <div class="flex flex-col mx-auto mt-10">
-        <a href="<%= places_city_path %>">
+        <a href="<%= referer_path %>">
             <button class="px-3 py-2 font-semibold place-self-center text-xs bg-blue-700 text-white rounded shadow-sm">
                 Done
             </button>

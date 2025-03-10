@@ -7,11 +7,35 @@ class AppPlaces < Roda
   plugin :render
   plugin :sessions, secret: ENV["APP_SECRET"]
 
+  def page_paths(path:, params:, offset:, limit:, total:)
+    params_next = params.tap do |d|
+      if offset+limit < total
+        d["offset"] = offset+limit
+      else
+        d.delete("offset")
+      end
+    end
+
+    page_next = params_next.size > 0 ? "#{path}?#{params_next.to_query}" : path
+
+    params_prev = params.tap do |d|
+      if offset-limit > 0
+        d["offset"] = offset-limit
+      else
+        d.delete("offset")
+      end
+    end
+
+    page_prev = params_prev.size > 0 ? "#{path}?#{params_prev.to_query}" : path
+
+    return page_prev, page_next
+  end
+
   route do |r|
     app_version = ENV["APP_VERSION"] || ENV["RACK_ENV"]
     htmx_request = r.headers["HX-Request"] ? 1 : 0
 
-    r.session["mapbox_session"] ||= ULID.generate()
+    r.session["mapbox_session"] ||= ULID.generate
 
     # GET /places/id/edit
     r.get Integer, "edit" do |place_id|
@@ -21,6 +45,8 @@ class AppPlaces < Roda
         return r.redirect("/places")
       end
       
+      referer_path = r.referer
+
       app_name = "Place Edit"
 
       view(
@@ -30,13 +56,33 @@ class AppPlaces < Roda
           app_name: app_name,
           app_version: app_version,
           place: place,
-          places_city_path: "/places/city/#{place.city_slug}",
+          places_notes_path: "/places/#{place.id}/notes",
           places_tags_path: "/places/#{place.id}/tags",
-        }
-      )
+          referer_path: referer_path,
+        })
     end
 
-    # GET /places/id/tags/add|remove - htmx
+    # GET /places/id/notes - htmx
+    # note: put, post throw "NoMethodError: undefined method 'value=' for an instance of Async::Variable"
+    r.get Integer, "notes" do |place_id|
+      place = ::Model::Place::find(id: place_id)
+
+      if not place
+        return response.headers["HX-Redirect"] = "/places"
+      end
+
+      Console.logger.info(self, "place #{place.id} notes update")
+
+      notes_new = r.params["val"].to_s.strip
+
+      place.notes = notes_new
+      place.save
+
+      "saved"
+    end
+
+    # get /places/id/tags/add|remove - htmx
+    # note: put, post throw "NoMethodError: undefined method 'value=' for an instance of Async::Variable"
     r.get Integer, "tags", String do |place_id, tags_op|
       place = ::Model::Place::find(id: place_id)
 
@@ -66,13 +112,16 @@ class AppPlaces < Roda
         layout: "layouts/app",
         locals: {
           place: place,
+          places_notes_path: "/places/#{place.id}/notes",
           places_tags_path: "/places/#{place.id}/tags",
-        }
-      )
+        })
     end
 
     # GET /places/city/chicago?q=tags:food
     r.get "city", String do |city_name|
+      limit = r.params.fetch("limit", 20).to_i
+      offset = r.params.fetch("offset", 0).to_i
+
       resolve_result = ::Service::City::Resolve.new(query: city_name, offset: 0, limit: 1).call
 
       if resolve_result.code != 0
@@ -91,21 +140,22 @@ class AppPlaces < Roda
       search_result = ::Service::Places::Search.new(
         query: query,
         near: city,
-        offset: 0,
-        limit: 50,
+        offset: offset,
+        limit: limit,
       ).call
 
       places_list = search_result.places
-      places_count = places_list.length
       places_total = search_result.total
 
-      tags_set_cur = search_result.tags.to_set
-      tags_list_new = (::Service::City::Tags.tags_set_by_city(city_name: city.name) - tags_set_cur).to_a.sort
+      tags_cur = search_result.tags
+      tags_list = ::Service::City::Tags.tags_set_by_city(city_name: city.name).sort
 
       app_name = "Places near '#{city.name}'"
 
       mapbox_path = "/mapbox/city/#{city.name_slug}"
       places_path = r.path
+
+      page_prev, page_next = page_paths(path: r.path, params: r.params, offset: offset, limit: limit, total: places_total)
 
       if htmx_request == 0
         view(
@@ -115,32 +165,39 @@ class AppPlaces < Roda
             app_name: app_name,
             app_version: app_version,
             city: city,
+            limit: limit,
             mapbox_path: mapbox_path,
-            places_count: places_count,
+            offset: offset,
+            page_next: page_next,
+            page_prev: page_prev,
             places_list: places_list,
             places_path: places_path,
             places_query: query,
             places_query_example: "place search - e.g. tags:food",
-            places_total: places_total,
-            tags_list: tags_list_new,
-          },
-        )
+            tags_cur: tags_cur,
+            tags_list: tags_list,
+            total: places_total,
+          })
       else
         # update browser history
-        response.headers["HX-Push-Url"] = "/places?q=#{query}"
+        response.headers["HX-Push-Url"] = "#{r.path}?q=#{query}"
 
         # render without layout
         render(
           "places/list_table",
             locals: {
             city: city,
+            limit: limit,
             mapbox_path: mapbox_path,
-            places_count: places_count,
+            offset: offset,
+            page_next: page_next,
+            page_prev: page_prev,
             places_list: places_list,
             places_path: places_path,
             places_query: query,
-            places_total: places_total,
-            tags_list: tags_list_new,
+            tags_cur: tags_cur,
+            tags_list: tags_list,
+            total: places_total,
           })
       end
     end
@@ -148,7 +205,8 @@ class AppPlaces < Roda
     # GET /places?q=city:chicago
     # GET /places?q=tags:food
     r.get do
-      app_name = "Places"
+      limit = r.params.fetch("limit", 10).to_i
+      offset = r.params.fetch("offset", 0).to_i
 
       query = r.params["q"].to_s
       query = ::Service::Database::Query.normalize(
@@ -159,12 +217,11 @@ class AppPlaces < Roda
 
       search_result = ::Service::Places::Search.new(
         query: query,
-        offset: 0,
-        limit: 20,
+        offset: offset,
+        limit: limit,
       ).call
 
       places_list = search_result.places
-      places_count = places_list.length
       places_total = search_result.total
 
       city_name = search_result.city_name
@@ -180,12 +237,16 @@ class AppPlaces < Roda
         end
       end
 
-      tags_set_cur = search_result.tags.to_set
-      tags_list_new = (::Service::City::Tags.tags_set_all - tags_set_cur).to_a.sort
+      tags_cur = search_result.tags
+      tags_list = ::Service::City::Tags.tags_set_all.sort
 
       places_path = r.path
 
       city_names = ::Model::Place.select(:city).distinct(:city).all().map{ |o| o.city.slugify }.sort
+
+      app_name = "Places"
+
+      page_prev, page_next = page_paths(path: r.path, params: r.params, offset: offset, limit: limit, total: places_total)
 
       if htmx_request == 0
         view(
@@ -196,30 +257,39 @@ class AppPlaces < Roda
             app_version: app_version,
             city: nil,
             city_names: city_names,
-            places_count: places_count,
+            limit: limit,
+            offset: offset,
+            page_next: page_next,
+            page_prev: page_prev,
             places_list: places_list,
             places_path: places_path,
             places_query: query,
             places_query_example: "places search - e.g. tags:food, city:chicago",
-            places_total: places_total,
-            tags_list: tags_list_new,
-          },
-        )
+            tags_cur: tags_cur,
+            tags_list: tags_list,
+            total: places_total,
+          })
       else
         # update browser history
         response.headers["HX-Push-Url"] = "#{r.path}?q=#{query}"
 
         # render without layout
-        render("places/list_table", locals: {
-          city: nil,
-          city_names: city_names,
-          places_count: places_count,
-          places_list: places_list,
-          places_path: places_path,
-          places_query: query,
-          places_total: places_total,
-          tags_list: tags_list_new,
-        })
+        render(
+          "places/list_table",
+          locals: {
+            city: nil,
+            city_names: city_names,
+            limit: limit,
+            offset: offset,
+            page_next: page_next,
+            page_prev: page_prev,
+            places_list: places_list,
+            places_path: places_path,
+            places_query: query,
+            tags_cur: tags_cur,
+            tags_list: tags_list,
+            total: places_total,
+          })
       end
     end
   end

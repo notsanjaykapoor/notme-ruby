@@ -1,0 +1,18 @@
+<div class="flex flex-row mx-auto mt-10">
+    <div class="w-1/12"></div>
+    <div class="w-1/2 text-xs">
+        <input type="textarea" id="place-notes-input" name="val" placeholder="notes" value="<%= place.notes %>" autocomplete="off" hx-get="<%= places_notes_path %>" hx-target="#place-notes-status" hx-trigger="input changed delay:1000ms" class="peer px-0 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-pink-600 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50">
+    </div>
+</div>
+
+<div class="flex flex-row mx-auto mt-3">
+    <div class="w-1/12"></div>
+    <div id="place-notes-status" class="font-light italic opacity-30 text-xs">
+    </div>
+</div>
+
+<script>
+    document.getElementById("place-notes-input").addEventListener("keyup", (event) => {
+        document.getElementById("place-notes-status").innerText = "changes"
+    })
+</script>

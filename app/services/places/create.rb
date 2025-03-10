@@ -4,8 +4,9 @@ module Service
   module Places
     class Create
 
-      def initialize(geo_json:)
+      def initialize(geo_json:, source_name:)
         @geo_json = geo_json
+        @source_name = source_name
 
         @type = @geo_json.dig("type")
 
@@ -60,7 +61,7 @@ module Service
           lon: lon,
           name: name,
           source_id: mapbox_id,
-          source_name: "mapbox",
+          source_name: @source_name,
           tags: tags,
           updated_at: Time.now.utc,
         )
@@ -82,6 +83,10 @@ module Service
 
           if s_.include?("hotel")
             tags.add("hotel")
+          end
+
+          if s_.include?("clothing") or s_.include?("shopping")
+            tags.add("fashion")
           end
         end
 

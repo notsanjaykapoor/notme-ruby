@@ -1,9 +1,13 @@
 <div class="flex flex-row mt-7 mx-5">
     <div class="w-12/12">
         <% tags_list.each do |tag| %>
-            <a href="<%= request_path %>?q=tags:<%= tag %>">
-                <button class="rounded-full text-xs font-bold text-white bg-orange-600 py-1 px-2"><%= tag %></button>
-            </a>
+            <% if tags_cur.include?(tag) %>
+                <button class="rounded-full text-xs font-bold text-white bg-orange-300 py-1 px-2"><%= tag %></button>
+            <% else %>
+                <a href="<%= request_path %>?q=tags:<%= tag %>">
+                    <button class="rounded-full text-xs font-bold text-white bg-orange-600 py-1 px-2"><%= tag %></button>
+                </a>
+            <% end %>
         <% end %>
     </div>
 </div>

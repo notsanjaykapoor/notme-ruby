@@ -14,7 +14,7 @@ class PlaceTest < Minitest::Test
       lat: 42.35,
       lon: -71.05,
       source_id: ULID.generate,
-      source_name: "mapbox",
+      source_name: ::Model::Place::SOURCE_MAPBOX,
       tags: ["food"],
     )
     assert place_1.id
@@ -45,7 +45,7 @@ class PlaceTest < Minitest::Test
         lat: 42.35,
         lon: -71.05,
         source_id: ULID.generate,
-        source_name: "mapbox,"
+        source_name: ::Model::Place::SOURCE_MAPBOX,
       )
     end
 
@@ -57,7 +57,7 @@ class PlaceTest < Minitest::Test
         lat: 42.35,
         lon: -71.05,
         source_id: place_1.source_id,
-        source_name: "mapbox",
+        source_name: ::Model::Place::SOURCE_MAPBOX,
       )
     end
   end

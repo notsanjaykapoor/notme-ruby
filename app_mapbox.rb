@@ -14,7 +14,7 @@ class AppMapbox < Roda
     mapbox_max = (ENV["APP_MAPBOX_MAX"] || APP_MAPBOX_MAX_DEFAULT).to_i
     mapbox_token = ENV["MAPBOX_TOKEN"]
 
-    r.session["mapbox_session"] ||= ULID.generate()
+    r.session["mapbox_session"] ||= ULID.generate
     mapbox_session = r.session["mapbox_session"]
     mapbox_requests = (r.session["mapbox_requests"] || 0).to_i
 
@@ -31,7 +31,7 @@ class AppMapbox < Roda
 
       Console.logger.info(self, "mapbox city '#{city.name_lower}' add '#{mapbox_id}'")
 
-      create_result = ::Service::Places::CreateFrom.new(mapbox_id: mapbox_id, mapbox_session: mapbox_session).call
+      create_result = ::Service::Places::CreateFromMapbox.new(mapbox_id: mapbox_id, mapbox_session: mapbox_session).call
 
       if create_result.code != 0
         # todo
@@ -44,7 +44,7 @@ class AppMapbox < Roda
 
     # GET /mapbox/city/:city_name?q=food - html or htmx
     r.get "city", String do |city_name|
-      query = r.params["q"].to_s
+      query = URI.decode_www_form_component(r.params["q"].to_s)
 
       resolve_result = ::Service::City::Resolve.new(query: city_name, offset: 0, limit: 5).call
       city = resolve_result.city
@@ -61,7 +61,9 @@ class AppMapbox < Roda
         return response.headers["HX-Redirect"] = "/places/city/#{city.name_slug}"
       end
 
-      search_result = ::Service::Mapbox::Search.new(city: city, query: query, limit: 10, session: mapbox_session).call
+      search_result = ::Service::Mapbox::Search.new(city: city, query: query, limit: 10).call
+      mapbox_code = search_result.code
+      mapbox_errors = search_result.errors
       mapbox_list = search_result.data
 
       mapbox_list.each_with_index do |data, index|
@@ -81,6 +83,8 @@ class AppMapbox < Roda
           "mapbox/list_table",
           locals: {
             city: city,
+            mapbox_code: mapbox_code,
+            mapbox_errors: mapbox_errors,
             mapbox_ids: mapbox_ids,
             mapbox_list: mapbox_list,
             mapbox_path: r.path,

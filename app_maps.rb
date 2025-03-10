@@ -14,7 +14,7 @@ class AppMaps < Roda
     mapbox_max = (ENV["APP_MAPBOX_MAX"] || APP_MAPBOX_MAX_DEFAULT).to_i
     mapbox_token = ENV["MAPBOX_TOKEN"]
 
-    r.session["mapbox_session"] ||= ULID.generate()
+    r.session["mapbox_session"] ||= ULID.generate
     mapbox_session = r.session["mapbox_session"]
     mapbox_requests = (r.session["mapbox_requests"] || 0).to_i
 
@@ -36,9 +36,9 @@ class AppMaps < Roda
 
       city = search_result.cities[0]
 
-      tags_set_all = ::Service::City::Tags.tags_set_by_city(city_name: city.name)
-      tags_list_new = tags_set_all.to_a.select{ |tag| !query.include?(tag) }.to_a.sort
-
+      tags_list = ::Service::City::Tags.tags_set_by_city(city_name: city.name).sort
+      tags_cur = tags_list.to_a.select{ |tag| query.include?(tag) }.to_a.sort
+      
       if not city
         response.status = 422
         return view(
@@ -48,7 +48,8 @@ class AppMaps < Roda
             city: nil,
             query: "",
             request_path: r.path,
-            tags_list: tags_list_new,
+            tags_cur: tags_cur,
+            tags_list: tags_list,
         })
       end
 
@@ -63,7 +64,8 @@ class AppMaps < Roda
             city: city,
             query: query,
             request_path: r.path,
-            tags_list: tags_list_new,
+            tags_cur: tags_cur,
+            tags_list: tags_list,
           })
       end
 
@@ -78,7 +80,8 @@ class AppMaps < Roda
             mapbox_token: mapbox_token,
             query: query,
             request_path: r.path,
-            tags_list: tags_list_new,
+            tags_cur: tags_cur,
+            tags_list: tags_list,
           })
       else
         # update browser history
