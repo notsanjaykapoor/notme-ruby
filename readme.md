@@ -40,12 +40,15 @@ Start server on a specified port:
 ./bin/api-server --port 5000
 ```
 
+or 
 
-#### Graph App
+```
+make dev
+```
 
-I like traveling by train and Europe is great for that.  When I plan trips, I want a better way to figure out routes from city to city based on time and train changes.  I used a graph database to do this.  I added train routes to Neo4j, with cities as nodes and times as edges.  I then built a visual interface with a simple query language to get answers to some of my common questions.
+#### Train Routes
 
-![Graph Interface Example](https://ik.imagekit.io/notme001/readme/graph_query_language.png "graph interface with query language")
+I love traveling by train in Europe.  When I plan trips, I want a better way to figure out routes from city to city based on time and train changes.  I added train routes to Neo4j and built a visual interface with a simple query language to get answers to some of my most common questions.
 
 Example 1 - Where can I go from Munich with at most 1 train change:
 
