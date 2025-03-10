@@ -180,7 +180,7 @@ class AppPlaces < Roda
           })
       else
         # update browser history
-        response.headers["HX-Push-Url"] = "#{r.path}?q=#{query}"
+        response.headers["HX-Push-Url"] = (query != "") ? "#{r.path}?q=#{query}" : r.path
 
         # render without layout
         render(
@@ -240,10 +240,9 @@ class AppPlaces < Roda
       tags_cur = search_result.tags
       tags_list = ::Service::City::Tags.tags_set_all.sort
 
-      places_path = r.path
-
       city_names = ::Model::Place.select(:city).distinct(:city).all().map{ |o| o.city.slugify }.sort
 
+      places_path = r.path
       app_name = "Places"
 
       page_prev, page_next = page_paths(path: r.path, params: r.params, offset: offset, limit: limit, total: places_total)
@@ -271,7 +270,7 @@ class AppPlaces < Roda
           })
       else
         # update browser history
-        response.headers["HX-Push-Url"] = "#{r.path}?q=#{query}"
+        response.headers["HX-Push-Url"] = (query != "") ? "#{r.path}?q=#{query}" : r.path
 
         # render without layout
         render(

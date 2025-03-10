@@ -109,11 +109,18 @@ class AppMaps < Roda
 
       Console.logger.info(self, "query '#{city_query}' mapbox session #{mapbox_session} requests #{mapbox_requests}/#{mapbox_max}")
 
+      city_names = ::Model::Place.select(:city).distinct(:city).all().map{ |o| o.city.slugify }.sort
+
+      app_name = "Maps"
+
       if city_query == ""
         return view(
           "maps/index",
           layout: "layouts/app",
           locals: {
+            app_name: app_name,
+            app_version: app_version,
+            city_names: city_names,
             request_path: r.path,
           },
         )
