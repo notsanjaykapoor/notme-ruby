@@ -4,7 +4,8 @@ module Service
   module Places
     class CreateFromMapbox
 
-      def initialize(mapbox_id:, mapbox_session:)
+      def initialize(city:, mapbox_id:, mapbox_session:)
+        @city = city
         @mapbox_id = mapbox_id
         @mapbox_session = mapbox_session
       end
@@ -16,7 +17,11 @@ module Service
           return retrieve_results
         end
 
-        ::Service::Places::Create.new(geo_json: retrieve_results.data, source_name: ::Model::Place::SOURCE_MAPBOX).call
+        ::Service::Places::Create.new(
+          city: @city,
+          geo_json: retrieve_results.data,
+          source_name: ::Model::Place::SOURCE_MAPBOX,
+        ).call
       end
 
     end

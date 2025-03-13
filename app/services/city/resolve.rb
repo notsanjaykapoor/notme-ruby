@@ -40,21 +40,26 @@ module Service
         end
 
         # geocode city
-        geocode_result = Geocoder.search(match_result[1])
+        geocode_results = Geocoder.search(match_result[1])
 
-        if geocode_result.length == 0
+        if geocode_results.length == 0
           struct.code = 404
           return struct
         end
 
-        geocode_data = geocode_result[0].data
-        address_type = geocode_data.fetch("addresstype", "")
+        # filter geocode results by addresstype
+        address_types = ["city", "province"]
+        geocode_results = geocode_results.select{ |o| address_types.include?(o.data.fetch("addresstype", ""))}
 
-        if not ["city", "province"].include?(address_type)
-          struct.code = 422
+        if geocode_results.length == 0
+          struct.code = 404
           return struct
         end
 
+        # sort cities over province
+        geocode_results = geocode_results.sort_by { |o| o.data.fetch("addresstype") }
+
+        geocode_data = geocode_results[0].data
         update_result = ::Service::City::Update.new(data: geocode_data).call
 
         struct.code = update_result.code

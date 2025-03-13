@@ -2,8 +2,13 @@ require "minitest/autorun"
 require "test_helper"
 
 class PlacesCreateTest < Minitest::Test
+  def setup
+    @chicago = ::Model::City.create(country_code: "US", data: {}, name: "Chicago", lat: 41.85, lon: -87.65)
+  end
+
   def teardown
     ::Model::Place.truncate
+    ::Model::City.truncate
   end
 
   def test_create_with_valid_feature
@@ -48,6 +53,7 @@ class PlacesCreateTest < Minitest::Test
     }
 
     struct = ::Service::Places::Create.new(
+      city: @chicago,
       geo_json: geo_json,
       source_name: ::Model::Place::SOURCE_MAPBOX,
     ).call
@@ -59,8 +65,10 @@ class PlacesCreateTest < Minitest::Test
 
     assert_operator place.id, :>, 0
     assert_equal place.city, "Chicago"
+    assert_equal place.country_code, "US"
     assert_equal place.lat, 41.891392
     assert_equal place.lon, -87.631073
+    assert_equal place.mappable, 1
     assert_equal place.source_id, "dXJuOm1ieHBvaTo0NWZiZWE3Yi1hYTI3LTQ0NmItOTJlOC03MTlhYjliYmVhMTc"
     assert_equal place.source_name, "mapbox"
     assert_equal place.tags, ["bar", "food"]
@@ -77,6 +85,7 @@ class PlacesCreateTest < Minitest::Test
     }
 
     struct = ::Service::Places::Create.new(
+      city: @chicago,
       geo_json: geo_json,
       source_name: ::Model::Place::SOURCE_MAPBOX,
     ).call
@@ -94,12 +103,34 @@ class PlacesCreateTest < Minitest::Test
     }
 
     struct = ::Service::Places::Create.new(
+      city: @chicago,
       geo_json: geo_json,
       source_name: ::Model::Place::SOURCE_MAPBOX,
     ).call
 
     assert_equal struct.code, 422
     assert_equal struct.places.length, 0
+  end
+
+  def test_create_with_manual_input
+    struct = ::Service::Places::CreateFromManual.new(
+      name: "Place 1",
+      city: @chicago,
+    ).call
+
+    assert_equal struct.code, 0
+    assert_equal struct.places.length, 1
+
+    place = struct.places[0]
+
+    assert_operator place.id, :>, 0
+    assert_equal place.city, "Chicago"
+    assert_equal place.country_code, "US"
+    assert_equal place.lat, 0.0
+    assert_equal place.lon, 0.0
+    assert_equal place.mappable, 0
+    assert_equal place.name, "Place 1"
+    assert_equal place.source_name, "manual"
   end
 
 end

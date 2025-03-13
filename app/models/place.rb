@@ -25,6 +25,14 @@ module Model
         where(Sequel.lit("city ilike ?", "%#{s}%"))
       end
 
+      def mappable(val)
+        if val.to_i == 0
+          where(lat: 0).where(lon: 0)
+        else
+          where(Sequel.lit("lat != 0")).where(Sequel.lit("lon != 0"))
+        end
+      end
+
       def name_eq(s)
         where(name: s)
       end
@@ -65,6 +73,15 @@ module Model
           "name" => name,
         },
       }
+    end
+
+    def mappable
+      # return 1 if place has valid coordinates, 0 otherwise
+      if lat != 0.0 and lon != 0.0
+        return 1
+      else
+        return 0
+      end
     end
 
     def notes

@@ -55,7 +55,8 @@ module Service
 
           query = query.order(Sequel.asc(:name)).offset(@offset).limit(@limit)
 
-          struct.cities = query.select(:bbox, :id, :lat, :lon, :name).all
+          # struct.cities = query.select(:bbox, :country_code, :data, :id, :lat, :lon, :name, :source_id, :source_name).all
+          struct.cities = query.all
         rescue => e
           struct.code = 500
           struct.errors.push(e.message)

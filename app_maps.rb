@@ -20,7 +20,8 @@ class AppMaps < Roda
 
     # GET /maps/city/:id, html or htmx
     r.get "city", String do |city_id|
-      query = r.params["q"].to_s
+      query_raw = r.params["q"].to_s
+      query_map = query_raw == "" ? "mappable:1" : "#{query_raw} mappable:1"
 
       if city_id.match(/^\d+$/)
         city_query = "id:#{city_id}"
@@ -38,7 +39,7 @@ class AppMaps < Roda
 
       tags_list = ::Service::City::Tags.tags_set_by_city(city_name: city.name).sort
       tags_color = tags_list.inject({}) { |d, tag| d[tag] = ::Service::Places::Tags.tag_color(tags: [tag]); d}
-      tags_cur = tags_list.to_a.select{ |tag| query.include?(tag) }.to_a.sort
+      tags_cur = tags_list.to_a.select{ |tag| query_raw.include?(tag) }.to_a.sort
 
       if not city
         response.status = 422
@@ -47,7 +48,8 @@ class AppMaps < Roda
           layout: "layouts/app",
           locals: {
             city: nil,
-            query: "",
+            query_map: query_map,
+            query_raw: query_raw,
             request_path: r.path,
             tags_cur: tags_cur,
             tags_list: tags_list,
@@ -63,7 +65,8 @@ class AppMaps < Roda
           layout: "layouts/app",
           locals: {
             city: city,
-            query: query,
+            query_map: query_map,
+            query_raw: query_raw,
             request_path: r.path,
             tags_color: tags_color,
             tags_cur: tags_cur,
@@ -80,7 +83,8 @@ class AppMaps < Roda
           locals: {
             city: city,
             mapbox_token: mapbox_token,
-            query: query,
+            query_map: query_map,
+            query_raw: query_raw,
             request_path: r.path,
             tags_color: tags_color,
             tags_cur: tags_cur,
@@ -94,7 +98,8 @@ class AppMaps < Roda
         render("maps/city/show_map", locals: {
           city: city,
           mapbox_token: mapbox_token,
-          query: query,
+          query_map: query_map,
+          query_raw: query_raw,
           request_path: r.path,
           tags_color: tags_color,
           tags_cur: tags_cur,

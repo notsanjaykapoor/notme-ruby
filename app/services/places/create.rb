@@ -4,7 +4,8 @@ module Service
   module Places
     class Create
 
-      def initialize(geo_json:, source_name:)
+      def initialize(city:, geo_json:, source_name:)
+        @city = city
         @geo_json = geo_json
         @source_name = source_name
 
@@ -44,23 +45,21 @@ module Service
 
         props = feature.dig("properties")
 
-        city = props.dig("context").dig("place").dig("name")
-        country_code = props.dig("context").dig("country").dig("country_code")
         lat = props.dig("coordinates").dig("latitude")
         lon = props.dig("coordinates").dig("longitude")
-        mapbox_id = props.dig("mapbox_id")
+        source_id = props.dig("mapbox_id") || props.dig("id")
         name = props.dig("name")
         tags = _feature_parse_tags(categories: props.dig("poi_category") || [])
 
         ::Model::Place.new(
-          city: city,
-          country_code: country_code,
+          city: @city.name,
+          country_code: @city.country_code,
           data: {},
           geo_json: feature,
           lat: lat,
           lon: lon,
           name: name,
-          source_id: mapbox_id,
+          source_id: source_id,
           source_name: @source_name,
           tags: tags,
           updated_at: Time.now.utc,

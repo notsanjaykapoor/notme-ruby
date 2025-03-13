@@ -6,7 +6,7 @@ module Service
         # map tags list to a color, used in map views
 
         if tags.include?("hotel")
-          return "green"
+          return "sky"
         end
 
         tags_set = tags.to_set

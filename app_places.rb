@@ -58,6 +58,7 @@ class AppPlaces < Roda
           place: place,
           places_notes_path: "/places/#{place.id}/notes",
           places_tags_path: "/places/#{place.id}/tags",
+          places_website_path: "/places/#{place.id}/website",
           referer_path: referer_path,
         })
     end
@@ -117,6 +118,64 @@ class AppPlaces < Roda
         })
     end
 
+    # GET /places/id/website - htmx
+    # note: put, post throw "NoMethodError: undefined method 'value=' for an instance of Async::Variable"
+    r.get Integer, "website" do |place_id|
+      place = ::Model::Place::find(id: place_id)
+
+      if not place
+        return response.headers["HX-Redirect"] = "/places"
+      end
+
+      Console.logger.info(self, "place #{place.id} website update")
+
+      website_new = r.params["val"].to_s.strip
+
+      place.website = website_new
+      place.save
+
+      "saved"
+    end
+
+    # GET /places/city/chicago/create - htmx
+    r.get "city", String, "create" do |city_name|
+      resolve_result = ::Service::City::Resolve.new(query: city_name, offset: 0, limit: 1).call
+      city = resolve_result.city
+
+      name = r.params["name"].to_s
+
+      Console.logger.info(self, "place create name '#{name}' city '#{city.name}'")
+
+      create_result = ::Service::Places::CreateFromManual.new(
+        name: name,
+        city: city,
+      ).call
+
+      if create_result.code == 0
+        place = create_result.places[0]
+
+        redirect_path = "/places/#{place.id}/edit"
+      else
+        redirect_path = "/places/city/#{city.name_slug}"
+      end
+
+      return response.headers["HX-Redirect"] = redirect_path
+    end
+
+    # GET /places/city/chicago/new - htmx
+    r.get "city", String, "new" do |city_name|
+      resolve_result = ::Service::City::Resolve.new(query: city_name, offset: 0, limit: 1).call
+      city = resolve_result.city
+  
+      # render without layout
+      render(
+        "places/new",
+        locals: {
+          city: city,
+        }
+      )
+    end
+
     # GET /places/city/chicago?q=tags:food
     r.get "city", String do |city_name|
       limit = r.params.fetch("limit", 20).to_i
@@ -173,7 +232,7 @@ class AppPlaces < Roda
             places_list: places_list,
             places_path: places_path,
             places_query: query,
-            places_query_example: "place search - e.g. tags:food",
+            places_query_example: "place search - e.g. tags:food, mappable:1",
             tags_cur: tags_cur,
             tags_list: tags_list,
             total: places_total,
@@ -185,7 +244,7 @@ class AppPlaces < Roda
         # render without layout
         render(
           "places/list_table",
-            locals: {
+          locals: {
             city: city,
             limit: limit,
             mapbox_path: mapbox_path,
@@ -198,7 +257,8 @@ class AppPlaces < Roda
             tags_cur: tags_cur,
             tags_list: tags_list,
             total: places_total,
-          })
+          }
+        )
       end
     end
 
@@ -263,7 +323,7 @@ class AppPlaces < Roda
             places_list: places_list,
             places_path: places_path,
             places_query: query,
-            places_query_example: "places search - e.g. tags:food, city:chicago",
+            places_query_example: "places search - e.g. tags:food, city:chicago, mappable:1",
             tags_cur: tags_cur,
             tags_list: tags_list,
             total: places_total,

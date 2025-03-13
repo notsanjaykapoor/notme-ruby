@@ -13,6 +13,7 @@ Sequel.migration do
       String :source_name, null: false, size: 100
       column :tags, "text[]"
       column :updated_at, DateTime # timestamp
+      String :website, size: 100
 
       index :city
       index :name, unique: true

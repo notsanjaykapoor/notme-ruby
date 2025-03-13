@@ -3,8 +3,8 @@ require "test_helper"
 
 class CitySearchTest < Minitest::Test
   def setup
-    @boston = ::Model::City.create(data: {}, name: "Boston", lat: 42.35, lon: -71.05)
-    @chicago = ::Model::City.create(data: {}, name: "Chicago", lat: 41.85, lon: -87.65)
+    @boston = ::Model::City.create(country_code: "US", data: {}, name: "Boston", lat: 42.35, lon: -71.05)
+    @chicago = ::Model::City.create(country_code: "US", data: {}, name: "Chicago", lat: 41.85, lon: -87.65)
   end
 
   def teardown

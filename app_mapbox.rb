@@ -31,7 +31,11 @@ class AppMapbox < Roda
 
       Console.logger.info(self, "mapbox city '#{city.name_lower}' add '#{mapbox_id}'")
 
-      create_result = ::Service::Places::CreateFromMapbox.new(mapbox_id: mapbox_id, mapbox_session: mapbox_session).call
+      create_result = ::Service::Places::CreateFromMapbox.new(
+        city: city,
+        mapbox_id: mapbox_id,
+        mapbox_session: mapbox_session,
+      ).call
 
       if create_result.code != 0
         # todo

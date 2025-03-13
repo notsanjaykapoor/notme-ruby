@@ -1,0 +1,13 @@
+<form hx-get="/places/city/<%= city.name_slug %>/create" hx-target="">
+    <div class="flex flex-row mt-20">
+        <div class="w-1/12"></div>
+        <div class="w-1/4 text-xs">
+            <input type="search" name="name" placeholder="place name" value="" autocomplete="off" hx-get="" hx-target="" hx-trigger="search" class="peer px-0 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-pink-600 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50">
+        </div>
+        <div class="w-1/12 font-normal text-xs ml-10">
+            <button type="submit" class="px-2 py-2 font-semibold place-self-center text-xs bg-blue-700 text-white rounded shadow-sm">
+                Create
+            </button>
+        </div>
+    </div>
+</form>

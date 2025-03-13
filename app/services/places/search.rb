@@ -60,6 +60,8 @@ module Service
                 value = value.gsub(/-/, " ").split(" ").map{ |s| s.downcase }.join(" ")
                 query = query.where(Sequel.lit("lower(name) like ?", "#{value}%"))
               end
+            elsif ["mappable"].include?(field) # e.g. mappable:0|1
+              query = query.mappable(value)
             elsif ["near"].include?(field) # e.g. near:chicago
               # find city
               city = ::Model::City.where(Sequel.lit("lower(name) like ?", "#{value}%")).first
