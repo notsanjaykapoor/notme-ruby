@@ -126,9 +126,9 @@ class PlacesCreateTest < Minitest::Test
     assert_operator place.id, :>, 0
     assert_equal place.city, "Chicago"
     assert_equal place.country_code, "US"
-    assert_equal place.lat, 0.0
-    assert_equal place.lon, 0.0
-    assert_equal place.mappable, 0
+    assert_equal place.lat, @chicago.lat
+    assert_equal place.lon, @chicago.lon
+    assert_equal place.mappable, 1
     assert_equal place.name, "Place 1"
     assert_equal place.source_name, "manual"
   end

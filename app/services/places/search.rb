@@ -4,11 +4,11 @@ module Service
   module Places
     class Search
 
-      def initialize(query:, offset:, limit:, near: nil)
+      def initialize(query:, offset:, limit:, box: nil)
         @query = query
         @offset = offset
         @limit = limit
-        @near = near
+        @box = box
 
         @struct = Struct.new(:code, :city_name, :places, :tags, :total, :errors)
       end
@@ -26,16 +26,34 @@ module Service
           tokens = struct_tokens.tokens
           query = ::Model::Place
 
-          if @near
-            # add city scope
-            query = query.where(Sequel.lit("lower(city) like ?", "#{@near.name_lower}%"))
+          if @box
+            # add token to query string
+            tokens.push({
+              field: "box",
+              value: @box.name_lower,
+            })
           end
 
           tokens.each do |object|
             field = object[:field]
             value = object[:value]
 
-            if ["city"].include?(field) # e.g city:chicago, city:1
+            if ["box"].include?(field) # e.g. box:chicago, box:europe
+              # find city or region
+              object = ::Model::City.where(Sequel.lit("lower(name) like ?", "#{value}%")).first || 
+                ::Model::Region.where(Sequel.lit("lower(name) like ?", "#{value}%")).first
+
+              if not object
+                struct.code = 422
+                struct.errors.push("city invalid")
+                return struct
+              end
+
+              # make point from db geo fields and box using object's bounding box values
+              query = query.where(
+                Sequel.lit("ST_SetSRID(ST_MakePoint(lon, lat), 4326) && ST_SetSRID(ST_MakeBox2D(ST_Point(#{object.lon_min}, #{object.lat_min}), ST_Point(#{object.lon_max}, #{object.lat_max})), 4326)")
+              )
+            elsif ["city"].include?(field) # e.g city:chicago, city:1
               if value[/^~/]
                 value = value.gsub(/~/, '')
                 query = query.where(Sequel.lit("city ilike ?", "%#{value}%"))
@@ -52,6 +70,14 @@ module Service
                 end
                 struct.city_name = city_name
               end
+            elsif ["country"].include?(field)
+              if value.length == 2
+                country_code = value.upcase
+              else
+                # map country name to country code
+                country_code = ::Service::Country::Search.map_name_to_code(name: value).upcase
+              end
+              query = query.where(country_code: country_code)
             elsif ["name"].include?(field)
               if value[/^~/]
                 value = value.gsub(/~/, '')
@@ -62,18 +88,6 @@ module Service
               end
             elsif ["mappable"].include?(field) # e.g. mappable:0|1
               query = query.mappable(value)
-            elsif ["near"].include?(field) # e.g. near:chicago
-              # find city
-              city = ::Model::City.where(Sequel.lit("lower(name) like ?", "#{value}%")).first
-              if not city
-                struct.code = 422
-                struct.errors.push("city invalid")
-                return struct
-              end
-              # make point from db geo fields and box using city's bounding box values
-              query = query.where(
-                Sequel.lit("ST_SetSRID(ST_MakePoint(lon, lat), 4326) && ST_SetSRID(ST_MakeBox2D(ST_Point(#{city.lon_min}, #{city.lat_min}), ST_Point(#{city.lon_max}, #{city.lat_max})), 4326)")
-              )
             elsif ["tag", "tags"].include?(field)
               values = value.split(",").map{ |s| s.to_s.strip.downcase }
               query = query.tagged_with_any(values)
@@ -90,7 +104,7 @@ module Service
           struct.code = 500
           struct.errors.push(e.message)
 
-          Console.logger.failure(self, e)
+          Console.logger.error(self, e)
         end
 
         struct

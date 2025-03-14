@@ -92,8 +92,8 @@ module Model
       data["notes"] = s
     end
 
-    def notes_size
-      notes.length
+    def notes_length
+      notes.to_s.length
     end
 
     def tags
@@ -106,6 +106,10 @@ module Model
 
     def updated_at_unix
       updated_at.to_i
+    end
+
+    def website_length
+      website.to_s.length
     end
 
   end

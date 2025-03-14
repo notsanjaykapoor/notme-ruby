@@ -18,45 +18,38 @@ class AppMaps < Roda
     mapbox_session = r.session["mapbox_session"]
     mapbox_requests = (r.session["mapbox_requests"] || 0).to_i
 
-    # GET /maps/city/:id, html or htmx
-    r.get "city", String do |city_id|
+    # GET /maps/box/:box_name - html or htmx
+    r.get "box", String do |box_name|
       query_raw = r.params["q"].to_s
-      query_map = query_raw == "" ? "mappable:1" : "#{query_raw} mappable:1"
 
-      if city_id.match(/^\d+$/)
-        city_query = "id:#{city_id}"
-      else
-        city_query = "name:~#{city_id}"
+      resolve_result = ::Service::Geo::Find.new(query: box_name).call
+
+      if resolve_result.code != 0
+        return r.redirect("/maps")
       end
 
-      search_result = ::Service::City::Search.new(
-        query: city_query,
-        offset: 0,
-        limit: 1,
-      ).call
+      box = resolve_result.box
 
-      city = search_result.cities[0]
-
-      tags_list = ::Service::City::Tags.tags_set_by_city(city_name: city.name).sort
+      tags_list = ::Service::Geo::Tags.tags_set_by_box(box: box).sort
       tags_color = tags_list.inject({}) { |d, tag| d[tag] = ::Service::Places::Tags.tag_color(tags: [tag]); d}
       tags_cur = tags_list.to_a.select{ |tag| query_raw.include?(tag) }.to_a.sort
 
-      if not city
+      if not box
         response.status = 422
         return view(
-          "maps/city/show",
+          "maps/box/show",
           layout: "layouts/app",
           locals: {
-            city: nil,
-            query_map: query_map,
+            box: box,
             query_raw: query_raw,
             request_path: r.path,
+            tags_color: tags_color,
             tags_cur: tags_cur,
             tags_list: tags_list,
         })
       end
 
-      Console.logger.info(self, "city #{city.name} mapbox session #{mapbox_session} requests #{mapbox_requests}/#{mapbox_max}")
+      Console.logger.info(self, "maps box '#{box.name}' zoom #{box.map_zoom} mapbox session #{mapbox_session} requests #{mapbox_requests}/#{mapbox_max}")
 
       if mapbox_requests >= mapbox_max # throttle
         response.status = 429
@@ -65,7 +58,7 @@ class AppMaps < Roda
           layout: "layouts/app",
           locals: {
             city: city,
-            query_map: query_map,
+            mapbox_token: mapbox_token,
             query_raw: query_raw,
             request_path: r.path,
             tags_color: tags_color,
@@ -78,12 +71,11 @@ class AppMaps < Roda
 
       if htmx_request == 0
         view(
-          "maps/city/show",
+          "maps/box/show",
           layout: "layouts/app",
           locals: {
-            city: city,
+            box: box,
             mapbox_token: mapbox_token,
-            query_map: query_map,
             query_raw: query_raw,
             request_path: r.path,
             tags_color: tags_color,
@@ -95,10 +87,9 @@ class AppMaps < Roda
         response.headers["HX-Push-Url"] = "#{r.path}"
 
         # render without layout
-        render("maps/city/show_map", locals: {
-          city: city,
+        render("maps/box/show_map", locals: {
+          box: box,
           mapbox_token: mapbox_token,
-          query_map: query_map,
           query_raw: query_raw,
           request_path: r.path,
           tags_color: tags_color,
@@ -108,17 +99,18 @@ class AppMaps < Roda
       end
     end
 
-    # GET /maps, optional city=name param, html or htmx
+    # GET /maps?box=paris html or htmx
     r.get do
-      city_query = r.params["city"].to_s
+      box_query = r.params["box"].to_s
 
-      Console.logger.info(self, "query '#{city_query}' mapbox session #{mapbox_session} requests #{mapbox_requests}/#{mapbox_max}")
+      Console.logger.info(self, "maps query '#{box_query}' mapbox session #{mapbox_session} requests #{mapbox_requests}/#{mapbox_max}")
 
       city_names = ::Model::Place.select(:city).distinct(:city).all().map{ |o| o.city.slugify }.sort
+      region_names = ::Model::Region.select(:name).all().map{ |o| o.name.slugify }.sort
 
       app_name = "Maps"
 
-      if city_query == ""
+      if box_query == ""
         return view(
           "maps/index",
           layout: "layouts/app",
@@ -126,16 +118,24 @@ class AppMaps < Roda
             app_name: app_name,
             app_version: app_version,
             city_names: city_names,
+            region_names: region_names,
             request_path: r.path,
           },
         )
       end
 
-      resolve_result = ::Service::City::Resolve.new(query: city_query, offset: 0, limit: 5).call
-      city = resolve_result.city
+      geo_result = ::Service::Geo::Find.new(query: box_query).call
+      box = geo_result.box
 
-      if city
-        return response.headers["HX-Redirect"] = "/maps/city/#{city.name_slug}"
+      if not box
+        city_result = ::Service::City::Resolve.new(query: box_query).call
+        box = city_result.city
+
+        # todo - resolve region if no city found
+      end
+
+      if box
+        return response.headers["HX-Redirect"] = "/maps/box/#{box.name_slug}"
       else
         return response.headers["HX-Redirect"] = "/maps"
       end

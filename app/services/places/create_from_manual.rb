@@ -16,15 +16,15 @@ module Service
             {
               "type" => "Feature",
               "geometry" => {
-                "coordinates"=>[0.0, 0.0],
+                "coordinates"=>[@city.lon, @city.lat],
                 "type"=>"Point",
               },
               "properties" => {
                 "id" => ULID.generate,
                 "name" => @name,
                 "coordinates" => {
-                  "latitude"=>0.0,
-                  "longitude"=>0.0,
+                  "latitude"=>@city.lat,
+                  "longitude"=>@city.lon,
                 },
               }
             }

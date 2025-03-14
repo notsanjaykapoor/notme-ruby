@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Service
-  module City
+  module Region
     class Search
 
       def initialize(query:, offset:, limit:)
@@ -12,21 +12,11 @@ module Service
         @offset = offset
         @limit = limit
 
-        @struct = Struct.new(:code, :cities, :total, :errors)
+        @struct = Struct.new(:code, :regions, :total, :errors)
       end
 
       def call
         struct = @struct.new(0, [], 0, [])
-
-        if !@query.include?(":")
-          if @query.match(/^\d+$/)
-            # normalize query with id tag
-            @query = "id:#{@query}"
-          else
-            # normalize query with name tag
-            @query = "name:~#{@query}"
-          end
-        end
 
         Console.logger.info(self, "#{Thread.current[:rid]} query #{@query}")
 
@@ -36,13 +26,15 @@ module Service
           ).call
 
           tokens = struct_tokens.tokens
-          query = ::Model::City
+          query = ::Model::Region
 
           tokens.each do |object|
             field = object[:field]
             value = object[:value]
 
-            if ["id"].include?(field)
+            if ["code"].include?(field)
+              query = query.where(code: value.upcase)
+            elsif ["id"].include?(field)
               query = query.where(id: value)
             elsif ["name"].include?(field)
               if value[/^~/]
@@ -52,12 +44,6 @@ module Service
                 value = value.gsub(/-/, " ").split(" ").map{ |s| s.downcase }.join(" ")
                 query = query.where(Sequel.lit("lower(name) like ?", "#{value}%"))
               end
-            elsif ["temp"].include?(field)
-              query = query.where(temp: value)
-            elsif ["temp_gte"].include?(field)
-              query = query.where(Sequel.lit("temp >= ?", value.to_f))
-            elsif ["temp_lte"].include?(field)
-              query = query.where(Sequel.lit("temp <= ?", value.to_f))
             end
           end
 
@@ -65,7 +51,7 @@ module Service
 
           query = query.order(Sequel.asc(:name)).offset(@offset).limit(@limit)
 
-          struct.cities = query.all
+          struct.regions = query.all
         rescue => e
           struct.code = 500
           struct.errors.push(e.message)

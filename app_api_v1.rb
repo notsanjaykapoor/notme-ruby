@@ -17,17 +17,35 @@ class AppApiV1 < Roda
     end
 
     r.on "maps" do
-      # GET /api/v1/maps/tileset?lat=x&lon=y
-      r.get "tileset" do
+      # GET /api/v1/maps/tileset/city/:city_name?q=
+      r.get "tileset", "city", String do |city_name|
         env[:api_name] = "tileset_get"
+
+        resolve_result = ::Service::City::Resolve.new(query: city_name).call
+        city = resolve_result.city
 
         ::Api::V1::Map::Tileset.new(
           request: request,
           response: response,
+          box: city,
+        ).call
+      end
+
+      # GET /api/v1/maps/tileset/box/:box_name?q=
+      r.get "tileset", "box", String do |box_name|
+        env[:api_name] = "tileset_get"
+
+        resolve_result = ::Service::Geo::Find.new(query: box_name).call
+        box = resolve_result.box
+
+        ::Api::V1::Map::Tileset.new(
+          request: request,
+          response: response,
+          box: box,
         ).call
       end
     end
-
+    
     r.on "stocks" do
       # POST|PUT /api/v1/stocks/{ticker}?price=50.01
       r.on String do |ticker|

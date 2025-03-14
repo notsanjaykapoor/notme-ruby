@@ -11,32 +11,48 @@
 
 <div class="flex flex-row mx-auto mt-10">
     <div class="w-1/12"></div>
-    <div class="w-4/12">
-        <input id="search" type="search" name="city" placeholder="search by city" value="" autocomplete="off" hx-get=<%= request_path %> class="peer px-0 h-full w-full border-b bg-transparent pb-1.5 text-xs font-normal text-gray-400 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-pink-600 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50">
+    <div class="w-2/12 font-normal text-xs">
+        <form class="max-w-sm mx-auto text-xs mr-0 mt-2">
+            <select id="city-select" class="block px-0 pb-1.5 w-full text-xs text-gray-400 bg-transparent border-0 border-b border-gray-200 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer disabled:border-0 disabled:bg-blue-gray-50">
+                <option selected>select city</option>
+                <% for name in city_names %>
+                    <option value="/maps/box/<%= name %>"><%= name %></option>
+                <% end %>
+            </select>
+        </form>
     </div>
-    <div class="w-2/12"></div>
-    <% if defined?(city_names) and city_names.length > 0 %>
-        <div class="w-4/12 font-normal text-xs">
-            <form class="max-w-sm mx-auto text-xs mr-0 mt-2">
-                <select id="city-select" class="block px-0 pb-1.5 w-full text-xs text-gray-400 bg-transparent border-0 border-b border-gray-200 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer disabled:border-0 disabled:bg-blue-gray-50">
-                    <option selected>select city</option>
-                    <% for city_name in city_names %>
-                        <option value="/maps/city/<%= city_name %>"><%= city_name %></option>
-                    <% end %>
-                </select>
-            </form>
-        </div>
-    <% end %>
+    <div class="w-2/12 font-normal text-xs ml-10">
+        <form class="max-w-sm mx-auto text-xs mr-0 mt-2">
+            <select id="region-select" class="block px-0 pb-1.5 w-full text-xs text-gray-400 bg-transparent border-0 border-b border-gray-200 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer disabled:border-0 disabled:bg-blue-gray-50">
+                <option selected>select region</option>
+                <% for name in region_names %>
+                    <option value="/maps/box/<%= name %>"><%= name %></option>
+                <% end %>
+            </select>
+        </form>
+    </div>
+    <div class="w-3/12"></div>
+    <div class="w-3/12">
+        <input type="search" name="box" placeholder="search by city or region" value="" autocomplete="off" hx-get=<%= request_path %> class="peer px-0 h-full w-full border-b bg-transparent pb-1.5 text-xs font-normal text-gray-400 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-pink-600 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50">
+    </div>
+    <div class="w-1/12"></div>
 </div>
 
 
 <script>
-    // list for select change events and redirect to place city view
+    // list for select change events and redirect to map box view
     const city_select = document.getElementById("city-select")
+    const region_select = document.getElementById("region-select")
 
     if (city_select) {
         city_select.addEventListener("change", function() {
             window.location.href = city_select.value
+        })
+    }
+
+    if (region_select) {
+        region_select.addEventListener("change", function() {
+            window.location.href = region_select.value
         })
     }
 </script>

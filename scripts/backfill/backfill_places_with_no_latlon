@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+
+require "./boot.rb"
+
+subject = "Backfill"
+
+search_result = ::Service::Places::Search.new(query: "mappable:0", offset: 0, limit: 1000).call
+
+if search_result.code != 0
+  exit(create_result.code)
+end
+
+places_list = search_result.places
+
+Console.logger.info(subject, "backfill places with no latlon #{places_list.length}")
+
+for place in places_list
+  city = ::Model::City.find(name: place.city)
+
+  place.lat = city.lat
+  place.lon = city.lon
+  place.save
+
+  Console.logger.info(subject, "place #{place.id} updated")
+end
+
+Console.logger.info(subject, "backfill completed")

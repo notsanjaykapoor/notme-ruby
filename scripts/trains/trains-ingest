@@ -44,13 +44,13 @@ parser.parse!
     city_dst = ::Model::City.find(name: city_dst_name)
 
     if not city_src
-      resolve_result = ::Service::City::Resolve.new(query: "name:#{city_src_name}", offset: 0, limit: 1).call
+      resolve_result = ::Service::City::Resolve.new(query: "name:#{city_src_name}").call
       city_src = resolve_result.city
       Console.logger.info("trains", "city created #{city_src_name}")
     end
 
     if not city_dst
-      resolve_result = ::Service::City::Resolve.new(query: "name:#{city_dst_name}", offset: 0, limit: 1).call
+      resolve_result = ::Service::City::Resolve.new(query: "name:#{city_dst_name}").call
       city_dst = resolve_result.city
       Console.logger.info("trains", "city created #{city_dst_name}")
     end

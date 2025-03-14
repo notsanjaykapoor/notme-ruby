@@ -1,18 +1,21 @@
 # frozen_string_literal: true
 
 module Service
-  module City
+  module Region
     class Resolve
       #
-      # Resolve city object by first searching the database.  If a matching city is not found,
-      # geocode the city name, filter results based on 'addresstype' and add to the database.
+      # Resolve region object by first searching the database.  If a matching region is not found,
+      # geocode the region name, filter results based on 'addresstype' and add to the database.
       #
 
       def initialize(query:)
         @query = query.to_s
 
-        @address_types = ["city", "province"]
-        @struct = Struct.new(:code, :city, :errors)
+        @address_types = {
+          "country" => 1,
+          "continent" => 2,
+        }
+        @struct = Struct.new(:code, :region, :errors)
       end
 
       def call
@@ -30,10 +33,10 @@ module Service
           end
         end
 
-        search_result = ::Service::City::Search.new(query: @query, offset: 0, limit: 5).call
+        search_result = ::Service::Region::Search.new(query: @query, offset: 0, limit: 5).call
 
-        if search_result.cities.length > 0
-          struct.city = search_result.cities[0]
+        if search_result.regions.length > 0
+          struct.region = search_result.regions[0]
           return struct
         end
 
@@ -51,21 +54,21 @@ module Service
         end
 
         # filter geocode results by addresstype
-        geocode_results = geocode_results.select{ |o| @address_types.include?(o.data.fetch("addresstype", ""))}
+        geocode_results = geocode_results.select{ |o| @address_types.keys.include?(o.data.fetch("addresstype", ""))}
 
         if geocode_results.length == 0
           struct.code = 404
           return struct
         end
 
-        # sort cities over province
-        geocode_results = geocode_results.sort_by { |o| o.data.fetch("addresstype") }
+        # sort results by addresstype
+        geocode_results = geocode_results.sort_by { |o| @address_types.fetch(o.data.fetch("addresstype")) }
 
         geocode_data = geocode_results[0].data
-        update_result = ::Service::City::Update.new(data: geocode_data).call
+        update_result = ::Service::Region::Update.new(data: geocode_data).call
 
         struct.code = update_result.code
-        struct.city = update_result.city
+        struct.region = update_result.region
 
         struct
       end

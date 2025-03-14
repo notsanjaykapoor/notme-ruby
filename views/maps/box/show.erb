@@ -3,9 +3,9 @@
 <div class="flex mx-auto mt-5 mx-5">
     <div class="flex w-8/12 items-center justify-left">
         <div class="mt-2">
-            <% if city %>
+            <% if box %>
                 <button class="rounded-full text-xs font-bold text-white bg-blue-700 py-1 px-3">
-                    <%= city.name %>
+                    <%= box.name %>
                     <a href="/maps">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="float-right ml-2 size-4">
                             <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
@@ -15,24 +15,24 @@
             <% end %>
         </div>
         <div class="font-normal text-sm min-w-80 ml-10">
-            <input id="place-search" type="search" name="q" placeholder="place search - e.g. tags:food" value="<%= query_raw %>" autocomplete="off" hx-get=<%= request_path %> hx-target="#city-map" class="flex peer px-0 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans text-sm font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-sky-400 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50">
+            <input id="search" type="search" name="q" placeholder="place search - e.g. tags:food" value="<%= query_raw %>" autocomplete="off" hx-get=<%= request_path %> hx-target="#box-map" class="flex peer px-0 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans text-sm font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-sky-400 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50">
         </div>
         <div class="ml-10 mt-5 opacity-25 font-normal text-xs" id="city-count"></div>
         <div class="ml-5 mt-5 opacity-25 font-normal text-xs" id="place-name"></div>
     </div>
     <div class="flex w-4/12 items-center justify-end">
-        <% if city %>
-            <a class="font-bold text-xs text-blue-600" href="/places/box/<%= city.name_slug %>">
+        <% if box %>
+            <a class="font-bold mr-10 text-xs text-blue-600" href="/places/box/<%= box.name_slug %>">
                 list view
             </a>
         <% end %>
     </div>
 </div>
 
-<div id="city-map">
-    <% if city %>
-        <%= render "maps/city/show_map", locals: {
-            city: city,
+<div id="box-map">
+    <% if box %>
+        <%= render "maps/box/show_map", locals: {
+            box: box,
             mapbox_token: mapbox_token,
             query_raw: query_raw,
             request_path: request_path,
@@ -42,13 +42,3 @@
         } %>
     <% end %>
 </div>
-
-<script>
-    document.body.addEventListener('htmx:pushedIntoHistory', function(event) {
-        // event when url history is changed
-        uri = `http://host${event.detail.path}`
-        city = new URL(uri).searchParams.get('city')
-        console.log("city change", city)
-        // document.getElementById("city-search-input").value = city
-    })
-</script>

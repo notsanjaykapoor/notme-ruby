@@ -36,7 +36,7 @@ class CityUpdateTest < Minitest::Test
 
     assert_equal update_result.code, 0
 
-    city = update_result.city
+    city = ::Model::City.find(id: update_result.city.id)
 
     assert_equal city.bbox, [41.644531, 42.023040, -87.940088, -87.524081] # 6 digits
     assert_equal city.country_code, "US"

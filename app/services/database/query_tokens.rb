@@ -31,10 +31,10 @@ module Service
           # replace [-, +] chars with spaces
           value = value.gsub(/-/, HYPHEN_REPLACE_CHAR).gsub(/\+/, PLUS_REPLACE_CHAR)
 
-          struct.tokens.push(
+          struct.tokens.push({
             field: field,
             value: value,
-          )
+          })
         end
 
         struct

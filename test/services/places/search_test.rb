@@ -3,7 +3,7 @@ require "test_helper"
 
 class PlaceSearchTest < Minitest::Test
   def setup
-    @city_chicago = ::Model::City.create(
+    @chicago = ::Model::City.create(
       bbox: [41.644531,42.023040,-87.940088,-87.524081],
       data: {},
       name: "Chicago",
@@ -50,9 +50,46 @@ class PlaceSearchTest < Minitest::Test
     assert_equal struct.places.length, 2
   end
 
+  def test_query_city_box_match
+    # search with query string
+    struct = ::Service::Places::Search.new(
+      query: "box:chicago",
+      offset: 0,
+      limit: 10,
+    ).call
+
+    # should return 1 place within city bounds
+    assert_equal 0, struct.code
+    assert_equal 1, struct.places.length
+
+    # search with box param
+    struct = ::Service::Places::Search.new(
+      query: "",
+      box: @chicago,
+      offset: 0,
+      limit: 10,
+    ).call
+
+    # should return 1 place within city bounds
+    assert_equal 0, struct.code
+    assert_equal 1, struct.places.length
+  end
+
+  def test_query_city_box_invalid
+    struct = ::Service::Places::Search.new(
+      query: "box:unknown",
+      offset: 0,
+      limit: 10,
+    ).call
+
+    # should return no places
+    assert_equal 422, struct.code
+    assert_equal 0, struct.places.length
+  end
+
   def test_query_city_id_match
     struct = ::Service::Places::Search.new(
-      query: "city:#{@city_chicago.id}",
+      query: "city:#{@chicago.id}",
       offset: 0,
       limit: 10,
     ).call
@@ -80,30 +117,6 @@ class PlaceSearchTest < Minitest::Test
     ).call
 
     assert_equal 0, struct.code
-    assert_equal 0, struct.places.length
-  end
-
-  def test_query_city_near_match
-    struct = ::Service::Places::Search.new(
-      query: "near:chicago",
-      offset: 0,
-      limit: 10,
-    ).call
-
-    # should return 1 place within city bounds
-    assert_equal 0, struct.code
-    assert_equal 1, struct.places.length
-  end
-
-  def test_query_city_near_invalid
-    struct = ::Service::Places::Search.new(
-      query: "near:unknown",
-      offset: 0,
-      limit: 10,
-    ).call
-
-    # should return no places
-    assert_equal 422, struct.code
     assert_equal 0, struct.places.length
   end
 

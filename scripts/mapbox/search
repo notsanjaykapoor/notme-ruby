@@ -36,7 +36,7 @@ session = options[:session] || ULID.generate
 
 subject = "Mapbox Search"
 
-resolve_result = ::Service::City::Resolve.new(query: options[:city], offset: 0, limit: 3).call
+resolve_result = ::Service::City::Resolve.new(query: options[:city]).call
 
 if resolve_result.code != 0
   exit(resolve_result.code)

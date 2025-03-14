@@ -14,11 +14,7 @@ class CityResolveTest < Minitest::Test
     assert_equal 1, ::Model::City.count
 
     # query with explicit name tag
-    resolve_result = ::Service::City::Resolve.new(
-      query: "name:~chicago",
-      offset: 0,
-      limit: 10,
-    ).call
+    resolve_result = ::Service::City::Resolve.new(query: "name:~chicago").call
 
     assert_equal 1, ::Model::City.count
 
@@ -27,11 +23,7 @@ class CityResolveTest < Minitest::Test
     assert_equal "Chicago", resolve_result.city.name
 
     # query with explicit id tag
-    resolve_result = ::Service::City::Resolve.new(
-      query: "id:#{@chicago.id}",
-      offset: 0,
-      limit: 1,
-    ).call
+    resolve_result = ::Service::City::Resolve.new(query: "id:#{@chicago.id}").call
 
     assert_equal 1, ::Model::City.count
 
@@ -40,11 +32,7 @@ class CityResolveTest < Minitest::Test
     assert_equal "Chicago", resolve_result.city.name
 
     # query with implicit name tag
-    resolve_result = ::Service::City::Resolve.new(
-      query: "chicago",
-      offset: 0,
-      limit: 1,
-    ).call
+    resolve_result = ::Service::City::Resolve.new(query: "chicago").call
 
     assert_equal 1, ::Model::City.count
 
@@ -53,11 +41,7 @@ class CityResolveTest < Minitest::Test
     assert_equal "Chicago", resolve_result.city.name
 
     # query with implicit id tag
-    resolve_result = ::Service::City::Resolve.new(
-      query: "#{@chicago.id}",
-      offset: 0,
-      limit: 1,
-    ).call
+    resolve_result = ::Service::City::Resolve.new(query: "#{@chicago.id}").call
 
     assert_equal 1, ::Model::City.count
 
@@ -69,11 +53,7 @@ class CityResolveTest < Minitest::Test
   def test_resolve_with_city_not_exists
     assert_equal 1, ::Model::City.count
 
-    resolve_result = ::Service::City::Resolve.new(
-      query: "name:~munich",
-      offset: 0,
-      limit: 1,
-    ).call
+    resolve_result = ::Service::City::Resolve.new(query: "name:~munich").call
 
     assert_equal 2, ::Model::City.count
 

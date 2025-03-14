@@ -139,7 +139,7 @@ class AppPlaces < Roda
 
     # GET /places/city/chicago/create - htmx
     r.get "city", String, "create" do |city_name|
-      resolve_result = ::Service::City::Resolve.new(query: city_name, offset: 0, limit: 1).call
+      resolve_result = ::Service::City::Resolve.new(query: city_name).call
       city = resolve_result.city
 
       name = r.params["name"].to_s
@@ -164,7 +164,7 @@ class AppPlaces < Roda
 
     # GET /places/city/chicago/new - htmx
     r.get "city", String, "new" do |city_name|
-      resolve_result = ::Service::City::Resolve.new(query: city_name, offset: 0, limit: 1).call
+      resolve_result = ::Service::City::Resolve.new(query: city_name).call
       city = resolve_result.city
   
       # render without layout
@@ -176,18 +176,18 @@ class AppPlaces < Roda
       )
     end
 
-    # GET /places/city/chicago?q=tags:food
-    r.get "city", String do |city_name|
+    # GET /places/box/:box_name?q=tags:food - html or htmx
+    r.get "box", String do |box_name|
       limit = r.params.fetch("limit", 20).to_i
       offset = r.params.fetch("offset", 0).to_i
 
-      resolve_result = ::Service::City::Resolve.new(query: city_name, offset: 0, limit: 1).call
+      resolve_result = ::Service::Geo::Find.new(query: box_name).call
 
       if resolve_result.code != 0
         return r.redirect("/places")
       end
 
-      city = resolve_result.city
+      box = resolve_result.box
 
       query = r.params["q"].to_s
       query = ::Service::Database::Query.normalize(
@@ -198,7 +198,7 @@ class AppPlaces < Roda
 
       search_result = ::Service::Places::Search.new(
         query: query,
-        near: city,
+        box: box,
         offset: offset,
         limit: limit,
       ).call
@@ -207,11 +207,11 @@ class AppPlaces < Roda
       places_total = search_result.total
 
       tags_cur = search_result.tags
-      tags_list = ::Service::City::Tags.tags_set_by_city(city_name: city.name).sort
+      tags_list = ::Service::Geo::Tags.tags_set_by_box(box: box).sort
 
-      app_name = "Places near '#{city.name}'"
+      app_name = "Places in '#{box.name}'"
 
-      mapbox_path = "/mapbox/city/#{city.name_slug}"
+      mapbox_path = "/mapbox/city/#{box.name_slug}"
       places_path = r.path
 
       page_prev, page_next = page_paths(path: r.path, params: r.params, offset: offset, limit: limit, total: places_total)
@@ -223,7 +223,7 @@ class AppPlaces < Roda
           locals: {
             app_name: app_name,
             app_version: app_version,
-            city: city,
+            box: box,
             limit: limit,
             mapbox_path: mapbox_path,
             offset: offset,
@@ -232,7 +232,7 @@ class AppPlaces < Roda
             places_list: places_list,
             places_path: places_path,
             places_query: query,
-            places_query_example: "place search - e.g. tags:food, mappable:1",
+            places_query_example: "place search - e.g. tags:food",
             tags_cur: tags_cur,
             tags_list: tags_list,
             total: places_total,
@@ -245,7 +245,7 @@ class AppPlaces < Roda
         render(
           "places/list_table",
           locals: {
-            city: city,
+            box: box,
             limit: limit,
             mapbox_path: mapbox_path,
             offset: offset,
@@ -281,26 +281,27 @@ class AppPlaces < Roda
         limit: limit,
       ).call
 
-      places_list = search_result.places
-      places_total = search_result.total
+      box_name = search_result.city_name
 
-      city_name = search_result.city_name
-
-      if city_name != ""
-        # redirect to city view
-        city_path = "/places/city/#{city_name.slugify}"
+      if box_name != ""
+        # redirect to city/region view
+        box_path = "/places/box/#{box_name.slugify}"
 
         if htmx_request == 0
-          return r.redirect()
+          return r.redirect(box_path)
         else
-          return response.headers["HX-Redirect"] = city_path
+          return response.headers["HX-Redirect"] = box_path
         end
       end
 
+      places_list = search_result.places
+      places_total = search_result.total
+
       tags_cur = search_result.tags
-      tags_list = ::Service::City::Tags.tags_set_all.sort
+      tags_list = ::Service::Geo::Tags.tags_set_all.sort
 
       city_names = ::Model::Place.select(:city).distinct(:city).all().map{ |o| o.city.slugify }.sort
+      region_names = ::Model::Region.select(:name).all().map{ |o| o.name.slugify }.sort
 
       places_path = r.path
       app_name = "Places"
@@ -314,7 +315,7 @@ class AppPlaces < Roda
           locals: {
             app_name: app_name,
             app_version: app_version,
-            city: nil,
+            box: nil,
             city_names: city_names,
             limit: limit,
             offset: offset,
@@ -323,7 +324,8 @@ class AppPlaces < Roda
             places_list: places_list,
             places_path: places_path,
             places_query: query,
-            places_query_example: "places search - e.g. tags:food, city:chicago, mappable:1",
+            places_query_example: "places search - e.g. tags:food",
+            region_names: region_names,
             tags_cur: tags_cur,
             tags_list: tags_list,
             total: places_total,
@@ -336,7 +338,7 @@ class AppPlaces < Roda
         render(
           "places/list_table",
           locals: {
-            city: nil,
+            box: nil,
             city_names: city_names,
             limit: limit,
             offset: offset,
@@ -345,6 +347,7 @@ class AppPlaces < Roda
             places_list: places_list,
             places_path: places_path,
             places_query: query,
+            region_names: region_names,
             tags_cur: tags_cur,
             tags_list: tags_list,
             total: places_total,

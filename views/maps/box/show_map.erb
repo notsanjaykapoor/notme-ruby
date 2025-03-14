@@ -16,27 +16,26 @@
 
 <div id='map' style='width: 100%; position: absolute; top: 200px; bottom: 0; left: 0; right: 0;'></div>
 
-<span id="test" hx-get="/maps/box/<%= city.id %>/count" hx-trigger="map-changed from:body"/>
-
 <script>
     mapboxgl.accessToken = "<%= mapbox_token %>"
 
-    var city_name = "<%= city.name_slug %>"
-    var city_query = "<%= query_raw %>"
-    var city_lon = parseFloat("<%= city.lon %>")
-    var city_lat = parseFloat("<%= city.lat %>")
-    var bbox_lat_min = parseFloat("<%= city.lat_min %>")
-    var bbox_lat_max = parseFloat("<%= city.lat_max %>")
-    var bbox_lon_min = parseFloat("<%= city.lon_min %>")
-    var bbox_lon_max = parseFloat("<%= city.lon_max %>")
+    var box_name = "<%= box.name_slug %>"
+    var box_lon = parseFloat("<%= box.lon %>")
+    var box_lat = parseFloat("<%= box.lat %>")
+    var box_query = "<%= query_raw %>"
+    var map_zoom = parseInt("<%= box.map_zoom %>")
+    var bbox_lat_min = parseFloat("<%= box.lat_min %>")
+    var bbox_lat_max = parseFloat("<%= box.lat_max %>")
+    var bbox_lon_min = parseFloat("<%= box.lon_min %>")
+    var bbox_lon_max = parseFloat("<%= box.lon_max %>")
 
-    console.log(city_name, city_lon, city_lat, "bbox", bbox_lon_min, bbox_lat_min, bbox_lon_max, bbox_lat_max)
+    console.log(box_name, box_lon, box_lat, "bbox", bbox_lon_min, bbox_lat_min, bbox_lon_max, bbox_lat_max)
 
     var map = new mapboxgl.Map({
-        center: [city_lon, city_lat], // starting position [lng, lat]
+        center: [box_lon, box_lat], // starting position [lng, lat]
         container: 'map', // container ID
         style: 'mapbox://styles/mapbox/light-v11', // style URL
-        zoom: 10, // starting zoom
+        zoom: map_zoom, // starting zoom
     })
 
     function place_name_show(s) {
@@ -49,7 +48,7 @@
             bbox: [bbox_lon_min, bbox_lat_min, bbox_lon_max, bbox_lat_max],
             mapboxgl: mapboxgl,
             placeholder: 'Enter an address or place name',
-            zoom: 10, // same starting zoom as above
+            zoom: map_zoom, // same starting zoom as above
         });
 
         // disable search box
@@ -67,7 +66,7 @@
                     {
                         'type': 'Feature',
                         'geometry': {
-                            'coordinates': [city_lon, city_lat],
+                            'coordinates': [box_lon, box_lat],
                             'type': 'Point',
                         },
                         'properties': {
@@ -128,11 +127,11 @@
             }
         })
 
-        const ts_uri = `http://localhost:5001/api/v1/maps/tileset/city/${city_name}?q=${city_query}`
+        const ts_uri = `http://localhost:5001/api/v1/maps/tileset/box/${box_name}?q=${box_query}`
         const query = await fetch(ts_uri, {method: 'GET'})
         const json = await query.json()
 
-        console.log(city_name, "tileset", json)
+        console.log(box_name, "tileset", json)
         
         // update map
         map.getSource('tilequery').setData(json)
@@ -163,4 +162,5 @@
             place_name_show("")
         })
     })
+
 </script>

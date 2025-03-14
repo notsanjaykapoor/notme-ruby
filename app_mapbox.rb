@@ -22,7 +22,7 @@ class AppMapbox < Roda
     r.post "city", String, "add" do |city_name|
       mapbox_id = r.params["mapbox_id"].to_s
 
-      resolve_result = ::Service::City::Resolve.new(query: city_name, offset: 0, limit: 5).call
+      resolve_result = ::Service::City::Resolve.new(query: city_name).call
       city = resolve_result.city
 
       if not city
@@ -50,7 +50,7 @@ class AppMapbox < Roda
     r.get "city", String do |city_name|
       query = URI.decode_www_form_component(r.params["q"].to_s)
 
-      resolve_result = ::Service::City::Resolve.new(query: city_name, offset: 0, limit: 5).call
+      resolve_result = ::Service::City::Resolve.new(query: city_name).call
       city = resolve_result.city
 
       if not city

@@ -1,36 +1,14 @@
 # frozen_string_literal: true
 
 module Model
-  class City < ::Sequel::Model
+  class Region < ::Sequel::Model
     plugin :dirty
     plugin :validation_helpers
 
     def validate
       super
-      validates_presence [:lat, :lon, :name]
+      validates_presence [:lat, :lon, :name, :type]
       validates_unique [:name]
-    end
-
-    # scopes
-
-    dataset_module do
-      def name_eq(s)
-        where(name: s)
-      end
-
-      def name_like(s)
-        where(Sequel.lit("name ilike ?", "%#{s}%"))
-      end
-
-      # tagged with all tags in list
-      def tagged_with_all(list)
-        where(Sequel.pg_array(:tags).contains(Array(list)))
-      end
-
-      # tagged with any tag in list
-      def tagged_with_any(list)
-        where(Sequel.pg_array(:tags).overlaps(Array(list)))
-      end
     end
 
     def lat_min
@@ -50,7 +28,13 @@ module Model
     end
 
     def map_zoom
-      10
+      if type == "country"
+        6
+      elsif type == "continent"
+        4
+      else
+        4
+      end
     end
 
     def name_lower
@@ -58,7 +42,7 @@ module Model
     end
 
     def name_slug
-      name_lower.gsub(" ","-")
+      name.slugify
     end
 
     def tags

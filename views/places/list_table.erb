@@ -1,16 +1,20 @@
 <div class="flex flex-row mt-5">
     <div class="w-1/12"></div>
     <div class="font-normal text-zinc-400 text-xs">
-        query '<%= places_query %>', results <%= total == 0 ? 0 : offset+1 %> - <%= [offset+limit, total].min %> of <%= total %>
+        <% if total == 0 %>
+            query '<%= places_query %>', no results
+        <% else %>
+            query '<%= places_query %>', results <%= offset+1 %> - <%= [offset+limit, total].min %> of <%= total %>
+        <% end %>
     </div>
 </div>
 
 <div class="flex flex-row mt-10">
     <div class="w-1/12"></div>
     <div class="w-9/12">
-        <% if city %>
+        <% if box %>
             <button class="rounded-full text-xs font-bold text-white bg-blue-700 py-1 px-3 mr-5">
-                <%= city.name %>
+                <%= box.name %>
                 <a href="/places">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="float-right ml-2 size-4">
                         <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
@@ -30,8 +34,8 @@
         <% end %>
     </div>
     <div class="w-1/12 flex items-center justify-end">
-         <% if city %>
-            <a href="" hx-get="/places/city/<%= city.name_slug %>/new" hx-swap="outerHTML" hx-target="#places-table" class="mr-0">
+         <% if box %>
+            <a href="" hx-get="/places/box/<%= box.name_slug %>/new" hx-swap="outerHTML" hx-target="#places-table" class="mr-0">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-6 text-blue-600">
                     <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-11.25a.75.75 0 0 0-1.5 0v2.5h-2.5a.75.75 0 0 0 0 1.5h2.5v2.5a.75.75 0 0 0 1.5 0v-2.5h2.5a.75.75 0 0 0 0-1.5h-2.5v-2.5Z" clip-rule="evenodd" />
                 </svg>
@@ -49,7 +53,7 @@
             <tr class="">
                 <th class="p-4">name</th>
                 <th class="p-4">tags</th>
-                <th class="p-4">mappable</th>
+                <th class="p-4">website</th>
                 <th class="p-4">notes</th>
                 <th class="p-4">location</th>
                 <th class="p-4"></th>
@@ -65,16 +69,16 @@
                         <%= place.tags.join(", ") %>
                     </td>
                     <td class="p-4 font-normal">
-                        <%= place.mappable %>
+                        <%= place.website_length > 0 ? 1 : 0 %>
                     </td>
                     <td class="p-4 font-normal">
-                        <%= place.notes_size %>
+                        <%= place.notes_length %>
                     </td>
                     <td class="p-4">
-                        <% if city %>
+                        <% if box %>
                             <%= [place.city, place.country_code].join(', ') %>
                         <% else %>
-                            <a href="/places/city/<%= place.city_lower %>" class="font-bold text-blue-800">
+                            <a href="/places/box/<%= place.city_lower %>" class="font-bold text-blue-800">
                                 <%= [place.city, place.country_code].join(', ') %>
                             </a>
                         <% end %>
