@@ -61,8 +61,8 @@ class AppMapbox < Roda
       Console.logger.info(self, "mapbox city '#{city.name_lower}' search '#{query}'")
 
       if query == ""
-        # redirect to city places
-        return response.headers["HX-Redirect"] = "/places/city/#{city.name_slug}"
+        # redirect to box
+        return response.headers["HX-Redirect"] = "/places/box/#{city.name_slug}"
       end
 
       search_result = ::Service::Mapbox::Search.new(city: city, query: query, limit: 10).call

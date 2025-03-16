@@ -69,6 +69,10 @@ module Model
       super(TagList.new.normalize(tags: list))
     end
 
+    def type
+      "city"
+    end
+
     def updated_at_unix
       updated_at.to_i
     end

@@ -16,10 +16,10 @@ class PlacesCreateTest < Minitest::Test
       "type"=>"FeatureCollection",
       "features" => [
         {
-          "type" => "Feature",
+          "type" => "Feature", # required
           "geometry" => {
-            "coordinates"=>[-87.631073, 41.891392],
-            "type"=>"Point",
+            "coordinates"=>[-87.631073, 41.891392], # required
+            "type"=>"Point", # required
           },
           "properties" => {
             "name"=>"Beatrix River North",
@@ -38,8 +38,8 @@ class PlacesCreateTest < Minitest::Test
               "street"=>{"id"=>"", "name"=>"n clark st"}
             },
             "coordinates"=>{
-              "latitude"=>41.891392,
-              "longitude"=>-87.631073,
+              "latitude"=>41.891392, # optional
+              "longitude"=>-87.631073, # optional
               "routable_points"=>[{"name"=>"default", "latitude"=>41.891390910897094, "longitude"=>-87.63112154287269}]
             },
             "language"=>"en",

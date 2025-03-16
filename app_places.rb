@@ -7,6 +7,8 @@ class AppPlaces < Roda
   plugin :render
   plugin :sessions, secret: ENV["APP_SECRET"]
 
+  PAGE_LIMIT_DEFAULT = 20
+
   def page_paths(path:, params:, offset:, limit:, total:)
     params_next = params.tap do |d|
       if offset+limit < total
@@ -56,10 +58,48 @@ class AppPlaces < Roda
           app_name: app_name,
           app_version: app_version,
           place: place,
+          places_brands_path: "/places/#{place.id}/brands",
           places_notes_path: "/places/#{place.id}/notes",
           places_tags_path: "/places/#{place.id}/tags",
           places_website_path: "/places/#{place.id}/website",
           referer_path: referer_path,
+        })
+    end
+
+    # GET /places/id/brands/add|remove - htmx
+    # note: put, post throw "NoMethodError: undefined method 'value=' for an instance of Async::Variable"
+    r.get Integer, "brands", String do |place_id, brands_op|
+      place = ::Model::Place::find(id: place_id)
+
+      if not place
+        return response.headers["HX-Redirect"] = "/places"
+      end
+
+      print("params ", r.params) #
+
+      brands_op = r.path.split("/")[-1]
+      brands_mod = r.params["brands"].to_s.split(",").map{ |s| s.strip }
+
+      Console.logger.info(self, "place #{place.id} brands '#{brands_op}' '#{brands_mod}'")
+
+      case brands_op
+      when "add"
+        brands = (place.brands.to_set + brands_mod.to_set).to_a
+      when "remove"
+        brands = (place.brands.to_set - brands_mod.to_set).to_a
+      end
+
+      place.update(
+        brands: brands,
+        updated_at: Time.now.utc,
+      )
+
+      render(
+        "places/edit_brands",
+        layout: "layouts/app",
+        locals: {
+          place: place,
+          places_brands_path: "/places/#{place.id}/brands",
         })
     end
 
@@ -82,7 +122,7 @@ class AppPlaces < Roda
       "saved"
     end
 
-    # get /places/id/tags/add|remove - htmx
+    # GET /places/id/tags/add|remove - htmx
     # note: put, post throw "NoMethodError: undefined method 'value=' for an instance of Async::Variable"
     r.get Integer, "tags", String do |place_id, tags_op|
       place = ::Model::Place::find(id: place_id)
@@ -113,7 +153,6 @@ class AppPlaces < Roda
         layout: "layouts/app",
         locals: {
           place: place,
-          places_notes_path: "/places/#{place.id}/notes",
           places_tags_path: "/places/#{place.id}/tags",
         })
     end
@@ -137,18 +176,23 @@ class AppPlaces < Roda
       "saved"
     end
 
-    # GET /places/city/chicago/create - htmx
-    r.get "city", String, "create" do |city_name|
-      resolve_result = ::Service::City::Resolve.new(query: city_name).call
-      city = resolve_result.city
+    # GET /places/box/chicago/create - htmx
+    r.get "box", String, "create" do |box_name|
+      resolve_result = ::Service::Geo::Find.new(query: box_name).call
+      box = resolve_result.box
+
+      if !box.is_a?(::Model::City)
+        # box should always be a city
+        return response.headers["HX-Redirect"] = "/places/box/#{box.name_slug}"
+      end
 
       name = r.params["name"].to_s
 
-      Console.logger.info(self, "place create name '#{name}' city '#{city.name}'")
+      Console.logger.info(self, "place create name '#{name}' box '#{box.name}'")
 
       create_result = ::Service::Places::CreateFromManual.new(
         name: name,
-        city: city,
+        city: box,
       ).call
 
       if create_result.code == 0
@@ -156,22 +200,22 @@ class AppPlaces < Roda
 
         redirect_path = "/places/#{place.id}/edit"
       else
-        redirect_path = "/places/city/#{city.name_slug}"
+        redirect_path = "/places/box/#{box.name_slug}"
       end
 
       return response.headers["HX-Redirect"] = redirect_path
     end
 
-    # GET /places/city/chicago/new - htmx
-    r.get "city", String, "new" do |city_name|
-      resolve_result = ::Service::City::Resolve.new(query: city_name).call
-      city = resolve_result.city
+    # GET /places/box/chicago/new - htmx
+    r.get "box", String, "new" do |box_name|
+      resolve_result = ::Service::Geo::Find.new(query: box_name).call
+      box = resolve_result.box
   
       # render without layout
       render(
         "places/new",
         locals: {
-          city: city,
+          box: box,
         }
       )
     end
@@ -209,6 +253,10 @@ class AppPlaces < Roda
       tags_cur = search_result.tags
       tags_list = ::Service::Geo::Tags.tags_set_by_box(box: box).sort
 
+      brands_cur = search_result.brands
+      brands_list = ::Service::Geo::Brands.brands_set_by_box(box: box).sort
+      brands_show = ::Service::Geo::Brands.brands_flag(tags: tags_cur)
+
       app_name = "Places in '#{box.name}'"
 
       mapbox_path = "/mapbox/city/#{box.name_slug}"
@@ -224,6 +272,9 @@ class AppPlaces < Roda
             app_name: app_name,
             app_version: app_version,
             box: box,
+            brands_cur: brands_cur,
+            brands_list: brands_list,
+            brands_show: brands_show,
             limit: limit,
             mapbox_path: mapbox_path,
             offset: offset,
@@ -246,6 +297,9 @@ class AppPlaces < Roda
           "places/list_table",
           locals: {
             box: box,
+            brands_cur: brands_cur,
+            brands_list: brands_list,
+            brands_show: brands_show,
             limit: limit,
             mapbox_path: mapbox_path,
             offset: offset,
@@ -265,7 +319,7 @@ class AppPlaces < Roda
     # GET /places?q=city:chicago
     # GET /places?q=tags:food
     r.get do
-      limit = r.params.fetch("limit", 10).to_i
+      limit = r.params.fetch("limit", PAGE_LIMIT_DEFAULT).to_i
       offset = r.params.fetch("offset", 0).to_i
 
       query = r.params["q"].to_s
@@ -300,6 +354,10 @@ class AppPlaces < Roda
       tags_cur = search_result.tags
       tags_list = ::Service::Geo::Tags.tags_set_all.sort
 
+      brands_cur = search_result.brands
+      brands_list = ::Service::Geo::Brands.brands_set_all.sort
+      brands_show = ::Service::Geo::Brands.brands_flag(tags: tags_cur)
+
       city_names = ::Model::Place.select(:city).distinct(:city).all().map{ |o| o.city.slugify }.sort
       region_names = ::Model::Region.select(:name).all().map{ |o| o.name.slugify }.sort
 
@@ -316,6 +374,9 @@ class AppPlaces < Roda
             app_name: app_name,
             app_version: app_version,
             box: nil,
+            brands_cur: brands_cur,
+            brands_list: brands_list,
+            brands_show: brands_show,
             city_names: city_names,
             limit: limit,
             offset: offset,
@@ -339,6 +400,9 @@ class AppPlaces < Roda
           "places/list_table",
           locals: {
             box: nil,
+            brands_cur: brands_cur,
+            brands_list: brands_list,
+            brands_show: brands_show,
             city_names: city_names,
             limit: limit,
             offset: offset,

@@ -40,9 +40,13 @@ class TraceMiddleware
       path_name = "_na"
     end
 
-    span_name = "app#{path_name}"
+    if ENV.fetch("OTEL_EXPORTER_OTLP_ENDPOINT", nil)
+      span_name = "app#{path_name}"
 
-    AppTracer.in_span(span_name) do |span|
+      AppTracer.in_span(span_name) do |span|
+        @app.call(env)
+      end
+    else
       @app.call(env)
     end
   end

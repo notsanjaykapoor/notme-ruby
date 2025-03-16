@@ -23,6 +23,7 @@
     var box_lon = parseFloat("<%= box.lon %>")
     var box_lat = parseFloat("<%= box.lat %>")
     var box_query = "<%= query_raw %>"
+    var box_type = "<%= box.type %>"
     var map_zoom = parseInt("<%= box.map_zoom %>")
     var bbox_lat_min = parseFloat("<%= box.lat_min %>")
     var bbox_lat_max = parseFloat("<%= box.lat_max %>")
@@ -38,25 +39,36 @@
         zoom: map_zoom, // starting zoom
     })
 
-    function place_name_show(s) {
+    if (box_type == "city") {
+        // fit the map to include the bounding box
+        map.fitBounds([
+            [bbox_lon_min, bbox_lat_min], // [lng, lat] - southwestern corner of the bounds
+            [bbox_lon_max, bbox_lat_max] // [lng, lat] - northeastern corner of the bounds
+        ])
+    }
+
+function place_name_show(s) {
         document.getElementById('place-name').innerHTML = s
     }
 
     map.on('load', async () => {
-        const geocoder = new MapboxGeocoder({
-            accessToken: mapboxgl.accessToken,
-            bbox: [bbox_lon_min, bbox_lat_min, bbox_lon_max, bbox_lat_max],
-            mapboxgl: mapboxgl,
-            placeholder: 'Enter an address or place name',
-            zoom: map_zoom, // same starting zoom as above
-        });
+        // example search box
+        // const geocoder = new MapboxGeocoder({
+        //     accessToken: mapboxgl.accessToken,
+        //     bbox: [bbox_lon_min, bbox_lat_min, bbox_lon_max, bbox_lat_max],
+        //     mapboxgl: mapboxgl,
+        //     placeholder: 'Enter an address or place name',
+        //     zoom: map_zoom, // same starting zoom as above
+        // });
 
         // disable search box
         // map.addControl(geocoder, 'top-left');
 
-        const marker = new mapboxgl.Marker({
-            'color': '#008000'
-        })
+        // const marker = new mapboxgl.Marker({
+        //     'color': '#008000'
+        // })
+
+        // add tile, the feature is an example of how to init with a data point
 
         map.addSource('tilequery', {
             type: 'geojson',
@@ -72,7 +84,7 @@
                         'properties': {
                             'feature_type': 'poi',
                             'maki': 'restaurant',
-                            'name': 'Rando',
+                            'name': 'Rando Restaurant',
                             'poi_category': ['american restaurant', 'brunch restaurant', 'food', 'food and drink', 'restaurant'],
                             'tag': 'food',
                         },

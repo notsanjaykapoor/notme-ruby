@@ -10,17 +10,18 @@ module Service
         @limit = limit
         @box = box
 
-        @struct = Struct.new(:code, :city_name, :places, :tags, :total, :errors)
+        @struct = Struct.new(:code, :brands, :city_name, :places, :tags, :total, :errors)
       end
 
       def call
-        struct = @struct.new(0, "", [], [], 0, [])
+        struct = @struct.new(0, [], "", [], [], 0, [])
 
         Console.logger.info(self, "#{Thread.current[:rid]} query #{@query}")
 
         begin
           struct_tokens = ::Service::Database::QueryTokens.new(
-            query: @query
+            query: @query,
+            mode: "raw",
           ).call
 
           tokens = struct_tokens.tokens
@@ -53,6 +54,10 @@ module Service
               query = query.where(
                 Sequel.lit("ST_SetSRID(ST_MakePoint(lon, lat), 4326) && ST_SetSRID(ST_MakeBox2D(ST_Point(#{object.lon_min}, #{object.lat_min}), ST_Point(#{object.lon_max}, #{object.lat_max})), 4326)")
               )
+            elsif ["brands"].include?(field) # e.g brands:ma+
+              values = value.split(",").map{ |s| s.to_s.strip.downcase }
+              query = query.branded_with_any(values)
+              struct.brands.concat(values)
             elsif ["city"].include?(field) # e.g city:chicago, city:1
               if value[/^~/]
                 value = value.gsub(/~/, '')

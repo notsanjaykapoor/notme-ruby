@@ -22,10 +22,6 @@ module Service
               "properties" => {
                 "id" => ULID.generate,
                 "name" => @name,
-                "coordinates" => {
-                  "latitude"=>@city.lat,
-                  "longitude"=>@city.lon,
-                },
               }
             }
           ]

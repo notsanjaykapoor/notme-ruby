@@ -17,6 +17,17 @@ module Model
     # scopes
 
     dataset_module do
+      # tagged with all brands in list
+      def branded_with_all(list)
+        where(Sequel.pg_array(:brands).contains(Array(list)))
+      end
+
+      # tagged with any brand in list
+      def branded_with_any(list)
+        print("branded_with_any ", list)
+        where(Sequel.pg_array(:brands).overlaps(Array(list)))
+      end
+
       def city_eq(s)
         where(city: s)
       end
@@ -51,6 +62,14 @@ module Model
         where(Sequel.pg_array(:tags).overlaps(Array(list)))
       end
     end # end scopes
+
+    def brands
+      super || []
+    end
+
+    def brands=(list)
+      super(TagList.new.normalize(tags: list))
+    end
 
     def city_lower
       city.downcase.gsub(" ", "-")

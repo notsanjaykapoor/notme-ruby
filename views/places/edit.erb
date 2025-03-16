@@ -23,6 +23,12 @@
     } %>
 </div>
 
+<div id="place-brands">
+    <%= render "places/edit_brands", locals: {
+        place: place, places_brands_path: places_brands_path,
+    } %>
+</div>
+
 <div id="place-website">
     <%= render "places/edit_website", locals: {
         place: place, places_website_path: places_website_path,

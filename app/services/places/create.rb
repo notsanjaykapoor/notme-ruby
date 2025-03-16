@@ -37,19 +37,17 @@ module Service
       end
 
       def _feature_parse(feature:)
-        # assert feature.dig("type") == "Feature"
-
-        if feature.dig("type") != "Feature"
+        if feature.fetch("type") != "Feature"
           return nil
         end
 
-        props = feature.dig("properties")
+        geometry = feature.fetch("geometry")
+        lon, lat = geometry.fetch("coordinates") # coordinates should be [lon, lat] tuple
 
-        lat = props.dig("coordinates").dig("latitude")
-        lon = props.dig("coordinates").dig("longitude")
+        props = feature.dig("properties")
+        name = props.fetch("name")
         source_id = props.dig("mapbox_id") || props.dig("id")
-        name = props.dig("name")
-        tags = _feature_parse_tags(categories: props.dig("poi_category") || [])
+        tags = _feature_parse_tags(categories: props.fetch("poi_category", []))
 
         ::Model::Place.new(
           city: @city.name,

@@ -54,7 +54,7 @@ class AppMaps < Roda
       if mapbox_requests >= mapbox_max # throttle
         response.status = 429
         return view(
-          "maps/city/show",
+          "maps/box/show",
           layout: "layouts/app",
           locals: {
             city: city,

@@ -10,7 +10,9 @@ module Model
 
       # convert tags to array
 
-      tags = tags.split(",").map{ |s| s.strip } if tags.is_a?(String)
+      if tags.is_a?(String)
+        tags = tags.split(",").map{ |s| s.strip }
+      end
 
       # normalize tags; downcase, hyphenize
 
