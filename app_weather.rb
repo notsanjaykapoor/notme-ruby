@@ -13,8 +13,8 @@ class AppWeather < Roda
 
     weather_max = (ENV["APP_WEATHER_MAX"] || APP_WEATHER_MAX_DEFAULT).to_i
 
-    # POST /weather/add - htmx
-    r.post "add" do
+    # GET /weather/add - htmx
+    r.get "add" do
       if ::Model::Weather.count() >= weather_max
         response.status = 429
         return r.halt(429)
@@ -47,12 +47,15 @@ class AppWeather < Roda
       weather_count = weather_list.length
 
       # render without layout
-      render("weather/table", locals: {
-        query: query,
-        weather_count: weather_count,
-        weather_filter: 0,
-        weather_list: weather_list,
-      })
+      render(
+        "weather/list_table", 
+        locals: {
+          query: query,
+          weather_count: weather_count,
+          weather_filter: 0,
+          weather_list: weather_list,
+        }
+      )
     end
 
     # GET /weather, /weather?q=chi - html or htmx
@@ -75,7 +78,7 @@ class AppWeather < Roda
       weather_filter = query_raw == "" ? 0 : 1
 
       if htmx_request == 1
-        render("weather/table", locals: {
+        render("weather/list_table", locals: {
           query: query_normal,
           weather_count: weather_count,
           weather_filter: weather_filter,
@@ -164,12 +167,15 @@ class AppWeather < Roda
       weather_count = weather_list.length
 
       # render without layout
-      render("weather/table", locals: {
-        query: query,
-        weather_count: weather_count,
-        weather_filter: 0,
-        weather_list: weather_list,
-      })
+      render(
+        "weather/list_table",
+        locals: {
+          query: query,
+          weather_count: weather_count,
+          weather_filter: 0,
+          weather_list: weather_list,
+        }
+      )
     end
   end
 end

@@ -1,0 +1,66 @@
+<div class="flex flex-row mt-5">
+    <div class="w-1/12"></div>
+    <div class="w-3/12">
+        <div class="font-bold text-xs text-zinc-800">
+            query '<%= query %>', results <%= weather_count %>
+        </div>
+    </div>
+    <div class="w-4/12"></div>
+    <div class="w-3/12">
+        <span class="float-right font-normal text-zinc-400 text-xs">
+            <%= Time.now %>
+        </span>
+    </div>
+</div>
+
+<div class="flex flex-row mt-5">
+    <div class="w-1/12"></div>
+
+    <table class="w-10/12 mt-5">
+        <thead class="font-normal text-left text-xs leading-6 text-zinc-800">
+            <tr>
+                <th class="p-4">name</th>
+                <th class="p-4">temp</th>
+                <th class="p-4">feels like</th>
+                <th class="p-4">last updated</th>
+                <th class="p-4"></th>
+            </tr>
+        </thead>
+        <tbody>
+            <% weather_list.each do |weather| %>
+            <tr class="group hover:bg-zinc-50 odd:bg-white even:bg-slate-50 text-xs">
+                <% seconds_ago = weather.dig(:seconds_ago) %>
+                <% seconds_alert = seconds_ago < 60 ? 'bg-yellow-400' : '' %>
+
+                <td class="p-4 font-normal <%= seconds_alert %>"><%= weather.dig(:name) %></td>
+                <td class="p-4 font-normal <%= seconds_alert %>"><%= weather.dig(:temp) %></td>
+                <td class="p-4 font-normal <%= seconds_alert %>"><%= weather.dig(:feels_like) %></td>
+                <td class="p-4 font-normal <%= seconds_alert %>">
+                <% if seconds_ago < 60 %>
+                    just now
+                <% elsif seconds_ago < (60 * 60) %>
+                    <%= seconds_ago / 60 %> mins ago
+                <% elsif seconds_ago < (60 * 60 * 12) %>
+                    <%= seconds_ago / (60 * 60) %> hours ago
+                <% else %>
+                    <a class="cursor-pointer hover:underline text-blue-800 font-semibold" hx-put=<%= "/weather/#{weather.dig(:id)}" %> hx-target="#weather-table">
+                    <%= seconds_ago / (60 * 60) %> hours ago
+                    </a>
+                <% end %>
+                </td>
+                <td class="p-4 font-normal text-sm <%= seconds_alert %>">
+                    <a class="cursor-pointer hover:underline text-pink-600 font-semibold text-xs" hx-delete=<%= "/weather/#{weather.dig(:id)}" %> hx-target="closest tr" hx-swap="outerHTML swap:1s">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4">
+                            <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                        </svg>
+                    </a>
+                </td>
+            </tr>
+            <% end %>    
+        </tbody>
+    </table>
+
+    <% if weather_filter == 0 %>
+        <span hx-post="/weather/refresh" hx-target="#weather-table" hx-trigger="every 60s"/>
+    <% end %>
+</div>

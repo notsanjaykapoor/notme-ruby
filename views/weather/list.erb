@@ -1,25 +1,27 @@
-<div class="container grid grid-cols-12">
-  <div class="col-span-12 mt-10">
-    <h3 class="font-bold text-center">
-      <%= app_text %>
-    </h3>
-  </div>
-  <div class="col-start-2 col-span-10 mt-2 opacity-50 text-center text-xs text-zinc-400" id="ws-status">
-    @<%= app_version %>
-  </div>
+<div class="flex flex-row">
+    <div class="flex flex-col mx-auto mt-10">
+        <h3 class="font-bold mx-auto">
+            <%= app_text %>
+        </h3>
+        <div class="mx-auto mt-2 opacity-50 text-xs text-zinc-400">
+            @<%= app_version %>
+        </div>
+    </div>
 </div>
 
-<div class="container grid grid-cols-12 mt-10">
-  <div class="col-start-2 col-span-2 font-bold text-sm">
-    <input type="search" name="q" placeholder="search" autocomplete="off" hx-get="/weather" hx-target="#weather-table" hx-trigger="input changed delay:500ms, search" class="peer px-0 mx-4 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans text-sm font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-indigo-500 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50">
-  </div>
-  <div class="col-start-10 col-span-2 font-normal text-sm">
-    <input type="search" name="name" placeholder="add" autocomplete="off" hx-on:htmx:after-request="this.value = ''"  hx-post="/weather/add" hx-target="#weather-table" class="peer px-0 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans text-sm font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-indigo-500 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50">
-  </div>
+<div class="flex flex-row mx-auto mt-10">
+    <div class="w-1/12"></div>
+    <div class="w-3/12 font-normal text-xs">
+        <input type="search" name="q" placeholder="search" autocomplete="off" hx-get="/weather" hx-target="#weather-table" hx-trigger="input changed delay:500ms, search" class="peer px-0 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans text-xs font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-indigo-500 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50">
+    </div>
+    <div class="w-5/12"></div>
+    <div class="w-2/12 font-normal text-sm">
+        <input type="search" name="name" placeholder="add" autocomplete="off" hx-on:htmx:after-request="this.value = ''"  hx-get="/weather/add" hx-target="#weather-table" class="peer px-0 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans text-xs font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-indigo-500 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50">
+    </div>
 </div>
 
-<div class="container grid grid-cols-12 py-10" id="weather-table">
-  <%= render "weather/table", locals: {query: query, weather_count: weather_count, weather_filter: weather_filter, weather_list: weather_list} %>
+<div class="flex flex-col mx-auto" id="weather-table">
+    <%= render "weather/list_table", locals: {query: query, weather_count: weather_count, weather_filter: weather_filter, weather_list: weather_list} %>
 </div>
 
 <script>
