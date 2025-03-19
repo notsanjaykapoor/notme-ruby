@@ -25,10 +25,10 @@
 
         <% tags_list.each do |tag| %>
             <% if tags_cur.include?(tag) %>
-                <button class="rounded-full text-xs font-bold text-white bg-slate-400 opacity-50 py-1 px-2"><%= tag %></button>
-            <% elsif  brands_show == 0 %>
+                <button class="rounded-full text-xs font-bold text-white bg-sky-400 opacity-50 py-1 px-2"><%= tag %></button>
+            <% elsif brands_show == 0 %>
                 <a href="<%= places_path %>?q=tags:<%= tag %>">
-                    <button class="rounded-full text-xs font-bold text-white bg-slate-600 py-1 px-2"><%= tag %></button>
+                    <button class="rounded-full text-xs font-bold text-white bg-blue-700 py-1 px-2"><%= tag %></button>
                 </a>
             <% end %>
         <% end %>

@@ -254,8 +254,8 @@ class AppPlaces < Roda
       tags_list = ::Service::Geo::Tags.tags_set_by_box(box: box).sort
 
       brands_cur = search_result.brands
-      brands_list = ::Service::Geo::Brands.brands_set_by_box(box: box).sort
-      brands_show = ::Service::Geo::Brands.brands_flag(tags: tags_cur)
+      brands_list = ::Service::Geo::Brands.brands_set_by_box(box: box, tags: tags_cur).sort
+      brands_show = brands_list.length > 0 ? 1 : 0
 
       app_name = "Places in '#{box.name}'"
 
@@ -355,8 +355,14 @@ class AppPlaces < Roda
       tags_list = ::Service::Geo::Tags.tags_set_all.sort
 
       brands_cur = search_result.brands
-      brands_list = ::Service::Geo::Brands.brands_set_all.sort
-      brands_show = ::Service::Geo::Brands.brands_flag(tags: tags_cur)
+
+      if tags_cur.length > 0
+        brands_list = ::Service::Geo::Brands.brands_set_by_tags(tags: tags_cur)
+      else
+        brands_list = []
+      end
+
+      brands_show = brands_list.length > 0 ? 1 : 0
 
       city_names = ::Model::Place.select(:city).distinct(:city).all().map{ |o| o.city.slugify }.sort
       region_names = ::Model::Region.select(:name).all().map{ |o| o.name.slugify }.sort

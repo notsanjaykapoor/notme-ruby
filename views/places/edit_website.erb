@@ -3,12 +3,20 @@
     <div class="w-1/4 text-xs">
         <input type="textarea" id="place-website-input" name="val" placeholder="website" value="<%= place.website %>" autocomplete="off" hx-get="<%= places_website_path %>" hx-target="#place-website-status" hx-trigger="input changed delay:1000ms" class="peer px-0 h-full w-full border-b bg-transparent pt-4 pb-1.5 font-sans font-normal text-blue-gray-700 outline outline-0 transition-all placeholder-shown:border-blue-gray-200 focus:border-pink-600 focus:outline-0 disabled:border-0 disabled:bg-blue-gray-50">
     </div>
+    <div class="w-1/12 text-xs">
+        <% if place.website.to_s.length > 0 %>
+            <a href="<%= place.website%>" target="_href">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="font-bold ml-5 mt-2 size-5 text-blue-600">
+                    <path fill-rule="evenodd" d="M2 10a.75.75 0 0 1 .75-.75h12.59l-2.1-1.95a.75.75 0 1 1 1.02-1.1l3.5 3.25a.75.75 0 0 1 0 1.1l-3.5 3.25a.75.75 0 1 1-1.02-1.1l2.1-1.95H2.75A.75.75 0 0 1 2 10Z" clip-rule="evenodd" />
+                </svg>
+            </a>
+        <% end %>
+    </div>
 </div>
 
 <div class="flex flex-row mx-auto mt-3">
     <div class="w-1/12"></div>
-    <div id="place-website-status" class="font-light italic opacity-30 text-xs">
-    </div>
+    <div id="place-website-status" class="font-light italic opacity-30 text-xs"></div>
 </div>
 
 <script>
