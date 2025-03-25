@@ -127,7 +127,7 @@ class AppWeather < Roda
       weather_count = weather_list.length
 
       # render without layout
-      render("weather/table", locals: {
+      render("weather/list_table", locals: {
         query: query,
         weather_count: weather_count,
         weather_filter: 0,

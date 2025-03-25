@@ -4,9 +4,11 @@ module Service
   module City
     class Update
 
-      def initialize(data:)
-        @data = data
-        @name = @data.dig("name")
+      def initialize(name:, geo_json:)
+        @name = name
+        @geo_json = geo_json
+        @geo_props = geo_json.fetch("properties")
+        @geo_coords = geo_json.dig("geometry", "coordinates")
 
         @struct = Struct.new(:code, :city, :errors)
       end
@@ -22,10 +24,10 @@ module Service
           if city.blank?
             # create city
             create_params = {
-              bbox: @data.dig("boundingbox") || [],
-              country_code: @data["address"]["country_code"].to_s.upcase,
-              lat: @data["lat"].to_f,
-              lon: @data["lon"].to_f,
+              bbox: @geo_json.fetch("bbox", []),
+              country_code: @geo_props.fetch("country_code").to_s.upcase,
+              lat: @geo_coords[1].to_f,
+              lon: @geo_coords[0].to_f,
               name: @name,
             }
 
@@ -35,7 +37,7 @@ module Service
           # update city weather data
 
           city.update(
-            data: @data,
+            data: @geo_json,
             updated_at: Time.now.utc,
           )
 

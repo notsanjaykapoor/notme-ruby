@@ -357,7 +357,7 @@ class AppPlaces < Roda
       brands_cur = search_result.brands
 
       if tags_cur.length > 0
-        brands_list = ::Service::Geo::Brands.brands_set_by_tags(tags: tags_cur)
+        brands_list = ::Service::Geo::Brands.brands_set_by_tags(tags: tags_cur).sort
       else
         brands_list = []
       end

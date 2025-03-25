@@ -1,5 +1,9 @@
 class String
 
+  def deslugify
+    self.gsub("-", " ")
+  end
+
   def slugify
     self.downcase.gsub(" ","-")
   end

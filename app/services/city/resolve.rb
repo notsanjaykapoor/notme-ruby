@@ -11,7 +11,6 @@ module Service
       def initialize(query:)
         @query = query.to_s
 
-        @address_types = ["city", "province"]
         @struct = Struct.new(:code, :city, :errors)
       end
 
@@ -26,7 +25,7 @@ module Service
             @query = "id:#{@query}"
           else
             # normalize query with name tag
-            @query = "name:#{@query}"
+            @query = "name:#{@query.deslugify}"
           end
         end
 
@@ -43,26 +42,15 @@ module Service
         end
 
         # geocode city
-        geocode_results = Geocoder.search(match_result[1])
+        geocode_results = Service::Geo::Geocode.new(name: match_result[1], type: "city").call
 
-        if geocode_results.length == 0
+        if geocode_results.features.length == 0
           struct.code = 404
           return struct
         end
 
-        # filter geocode results by addresstype
-        geocode_results = geocode_results.select{ |o| @address_types.include?(o.data.fetch("addresstype", ""))}
-
-        if geocode_results.length == 0
-          struct.code = 404
-          return struct
-        end
-
-        # sort cities over province
-        geocode_results = geocode_results.sort_by { |o| o.data.fetch("addresstype") }
-
-        geocode_data = geocode_results[0].data
-        update_result = ::Service::City::Update.new(data: geocode_data).call
+        geo_json = geocode_results.features[0]
+        update_result = ::Service::City::Update.new(name: geo_json.dig("properties", "name"), geo_json: geo_json).call
 
         struct.code = update_result.code
         struct.city = update_result.city

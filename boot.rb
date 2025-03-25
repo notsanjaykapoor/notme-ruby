@@ -19,6 +19,7 @@ Console.logger.info("Boot", "starting")
 ::Sequel.default_timezone = :utc
 
 require "./boot/database.rb"
+require "./boot/geo.rb"
 require "./boot/json.rb"
 require "./boot/opentel.rb"
 require "./boot/secret.rb"
@@ -29,24 +30,30 @@ if ENV["RACK_ENV"] in ["dev", "tst"]
   require "debug"
 end
 
-struct_boot_database = Boot::Database.new.call
+boot_database = Boot::Database.new.call
 
 Boot::Json.new.call
 
 # initialize db global object
 
-DB = struct_boot_database.connection
+DB = boot_database.connection
 DB.extension(:pg_array, :pg_json)
 
 Console.logger.info("Boot", "database connection initialized")
 
 # initialize opentelemetry
 
-struct_boot_opentel = Boot::OpenTel.new.call
+boot_opentel = Boot::OpenTel.new.call
 
-if struct_boot_opentel.code == 0
-  AppTracer = struct_boot_opentel.tracer
+if boot_opentel.code == 0
+  AppTracer = boot_opentel.tracer
 end
+
+# initialize geocoder
+
+boot_geo = Boot::Geo.new.call
+
+Console.logger.info("Boot", "geo initialized - #{boot_geo.name}")
 
 # load app files
 

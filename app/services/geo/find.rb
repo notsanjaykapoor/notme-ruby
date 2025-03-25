@@ -24,7 +24,7 @@ module Service
             @query = "id:#{@query}"
           else
             # normalize query with name tag
-            @query = "name:#{@query}"
+            @query = "name:#{@query.deslugify}"
           end
         end
 
