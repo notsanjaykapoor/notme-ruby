@@ -19,12 +19,21 @@ class DatabaseQueryTest < Minitest::Test
       assert_equal query, "name:~chicago"     
     end
 
-    def test_tokens_with_spaces
+    def test_tokens_general
       struct_tokens = ::Service::Database::QueryTokens.new(query: "brands:ma+,yuta-m").call
       tokens = struct_tokens.tokens
 
       assert_equal tokens.length, 1
       assert_equal tokens[0], {field: "brands", value: "ma+,yuta-m"}
+    end
+
+    def test_tokens_with_spaces
+      struct_tokens = ::Service::Database::QueryTokens.new(query: "brands:ma cross name:restaurant name").call
+      tokens = struct_tokens.tokens
+
+      assert_equal tokens.length, 2
+      assert_equal tokens[0], {field: "brands", value:"ma cross"}
+      assert_equal tokens[1], {field: "name", value: "restaurant name"}
     end
 
     # old version
