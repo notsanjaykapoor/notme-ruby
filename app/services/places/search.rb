@@ -21,7 +21,6 @@ module Service
         begin
           struct_tokens = ::Service::Database::QueryTokens.new(
             query: @query,
-            mode: "raw",
           ).call
 
           tokens = struct_tokens.tokens
@@ -54,7 +53,7 @@ module Service
               query = query.where(
                 Sequel.lit("ST_SetSRID(ST_MakePoint(lon, lat), 4326) && ST_SetSRID(ST_MakeBox2D(ST_Point(#{object.lon_min}, #{object.lat_min}), ST_Point(#{object.lon_max}, #{object.lat_max})), 4326)")
               )
-            elsif ["brands"].include?(field) # e.g brands:ma+
+            elsif ["brand", "brands"].include?(field) # e.g brands:ma+
               values = value.split(",").map{ |s| s.to_s.strip.downcase }
               query = query.branded_with_any(values)
               struct.brands.concat(values)

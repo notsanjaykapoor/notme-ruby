@@ -55,7 +55,7 @@
             <% if brands_cur.include?(brand) %>
                 <button class="rounded-full text-xs font-bold text-white bg-sky-400 opacity-50 py-1 px-2"><%= brand %></button>
             <% else %>
-                <a href="<%= places_path %>?q=tags:<%= tags_str %> brands:<%= brand %>">
+                <a href="<%= places_path %>?q=tags:<%= URI.encode_uri_component(tags_str) %> brands:<%= URI.encode_uri_component(brand) %>">
                     <button class="rounded-full text-xs font-bold text-white bg-blue-700 py-1 px-2"><%= brand %></button>
                 </a>
             <% end %>

@@ -7,9 +7,8 @@ module Service
       HYPHEN_REPLACE_CHAR = " "
       PLUS_REPLACE_CHAR = " "
 
-      def initialize(query:, mode: "modify")
+      def initialize(query:)
         @query = query.to_s
-        @mode = mode
       end
 
       def call
@@ -17,27 +16,44 @@ module Service
 
         # normalize query, remove extra spaces
 
-        @query = @query.gsub(/:\s+/, ":")
+        query = @query.gsub(/:\s+/, ":")
 
-        # split query into tokens
+        tokens_list = query.to_s.split(" ")
+        tokens_count = tokens_list.length
+        tokens_i = 0
 
-        @query.to_s.split(" ").each do |token|
+        while tokens_i < tokens_count
+          token = tokens_list[tokens_i]
+
+          if token.empty? or !token.include?(":")
+            # skip, looking for next token
+            tokens_i += 1
+            continue
+          end
+
           field, value = token.split(":")
 
-          if field.nil? || value.nil?
-            # skip
-            next
+          while tokens_i+1 < tokens_count
+            # greedy parse value until we find next field
+            token_j = tokens_list[tokens_i+1]
+            if token_j.include?(":")
+              # found next field
+              break
+            end
+
+            # append this token to current token value
+            value = "#{value} #{token_j}"
+            tokens_i += 1
           end
 
-          if @mode == "modify"
-            # replace [-, +] chars with spaces
-            value = value.gsub(/-/, HYPHEN_REPLACE_CHAR).gsub(/\+/, PLUS_REPLACE_CHAR)
-          end
+          value_norm = value.strip()
 
           struct.tokens.push({
             field: field,
-            value: value,
+            value: value_norm,
           })
+
+          tokens_i += 1
         end
 
         struct
